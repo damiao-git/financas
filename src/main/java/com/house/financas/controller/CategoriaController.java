@@ -5,10 +5,7 @@ import com.house.financas.service.CategoriaService;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -20,8 +17,26 @@ public class CategoriaController {
     private CategoriaService service;
 
     @GetMapping
-    public ResponseEntity<List<Categoria>> listarTodasCategorias(){
+    public ResponseEntity<List<Categoria>> listarTodasCategorias() {
         return service.listarTodasCategorias();
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<Categoria> buscarCategoria(@PathVariable final Long id){
+        return service.buscarCategoriaById(id);
+    }
+    @PostMapping
+    public ResponseEntity<Categoria> cadastrarCategoria(@RequestBody final Categoria categoria) {
+        return service.cadastrarCategoria(categoria);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Categoria> atualizarCategoria(@PathVariable final Long id, @RequestBody Categoria categoria) {
+        return service.atualizarCategoria(id, categoria);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletarCategoria(@PathVariable final Long id){
+        return service.deletarCategoriaById(id);
+    }
 }
