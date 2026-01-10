@@ -3,9 +3,6 @@ package com.house.financas.service;
 import com.house.financas.model.Categoria;
 import com.house.financas.repository.CategoriaRepository;
 import lombok.AllArgsConstructor;
-import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -15,37 +12,30 @@ import java.util.Optional;
 @AllArgsConstructor
 public class CategoriaService {
 
-    private CategoriaRepository categoriaRepository;
+    private final CategoriaRepository categoriaRepository;
 
-    public ResponseEntity<Categoria> buscarCategoriaById(final Long id){
-        Optional<Categoria> categoriaEncontrada = categoriaRepository.findById(id);
-        return categoriaEncontrada.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
-    }
-
-    public ResponseEntity<List<Categoria>> listarTodasCategorias(){
-        return ResponseEntity.ok(categoriaRepository.findAll());
-    }
-
-    public ResponseEntity<Categoria> cadastrarCategoria(final Categoria categoria){
-        return ResponseEntity.status(HttpStatus.CREATED).body(categoriaRepository.save(categoria));
-    }
-
-    public ResponseEntity<Categoria> atualizarCategoria(final Long id, final Categoria categoria){
+    public Categoria buscarPorId(Long id) {
         return categoriaRepository.findById(id)
-                .map(c -> {
-                    c.setNome(categoria.getNome());
-                    return ResponseEntity.ok(categoriaRepository.save(c));
-                })
-                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+                .orElseThrow(() -> new RuntimeException("Categoria não encontrada"));
     }
 
-    public ResponseEntity<Void> deletarCategoriaById(final long id){
-        Optional<Categoria> categoriaEncontrada = categoriaRepository.findById(id);
-        if(categoriaEncontrada.isPresent()){
-            categoriaRepository.deleteById(id);
-            return ResponseEntity.ok().build();
-        }else{
-            return ResponseEntity.notFound().build();
-        }
+    public List<Categoria> listarTodas() {
+        return categoriaRepository.findAll();
+    }
+
+    public Categoria cadastrar(Categoria categoria) {
+        return categoriaRepository.save(categoria);
+    }
+
+    public Categoria atualizar(Long id, Categoria categoria) {
+        Categoria existente = buscarPorId(id);
+        existente.setNome(categoria.getNome());
+        return categoriaRepository.save(existente);
+    }
+
+    public void deletar(Long id) {
+        Categoria existente = buscarPorId(id);
+        categoriaRepository.delete(existente);
     }
 }
+
