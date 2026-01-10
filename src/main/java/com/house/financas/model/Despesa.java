@@ -1,12 +1,9 @@
 package com.house.financas.model;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
-import java.time.LocalDate;
-import java.time.MonthDay;
 
 @Entity
 @Table(name = "despesa")

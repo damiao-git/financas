@@ -10,32 +10,35 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/despesa")
+@RequestMapping("/despesas")
 @AllArgsConstructor
 public class DespesaController {
     private DespesaService service;
 
     @GetMapping
     public ResponseEntity<List<Despesa>> listarTodasDespesas() {
-        return service.listarTodasDespesas();
+        return ResponseEntity.ok(service.listarTodasDespesas());
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Despesa> buscarDespesa(@PathVariable final Long id){
-        return service.buscarDespesaById(id);
+        return ResponseEntity.ok(service.buscarDespesaById(id));
     }
     @PostMapping
     public ResponseEntity<?> cadastrarDespesa(@RequestBody final DespesaDto despesaDto) {
-        return service.cadastrarDespesa(despesaDto);
+        service.cadastrarDespesa(despesaDto);
+        return ResponseEntity.noContent().build();
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Despesa> atualizarDespesa(@PathVariable final Long id, @RequestBody Despesa categoria) {
-        return service.atualizarDespesa(id, categoria);
+    public ResponseEntity<Despesa> atualizarDespesa(@PathVariable final Long id, @RequestBody DespesaDto categoria) {
+        service.atualizarDespesa(id, categoria);
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletarDespesa(@PathVariable final Long id){
-        return service.deletarDespesaById(id);
+        service.deletarDespesaById(id);
+        return ResponseEntity.noContent().build();
     }
 }
