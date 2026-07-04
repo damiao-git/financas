@@ -31,6 +31,15 @@ public class ReceitaRequest {
     @Max(value = 31, message = "Dia de recebimento deve ser no maximo 31")
     private Integer diaRecebimento;
 
+    @NotNull(message = "Mes e obrigatorio")
+    @Min(value = 1, message = "Mes deve ser no minimo 1")
+    @Max(value = 12, message = "Mes deve ser no maximo 12")
+    private Integer mes;
+
+    @NotNull(message = "Ano e obrigatorio")
+    @Min(value = 2000, message = "Ano deve ser no minimo 2000")
+    private Integer ano;
+
     @NotNull(message = "Tipo de receita e obrigatorio")
     private TipoReceita tipoReceita;
 

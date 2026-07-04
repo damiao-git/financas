@@ -40,6 +40,12 @@ public class Receita {
     @Column(nullable = false)
     private Integer diaRecebimento;
 
+    @Column(nullable = false)
+    private Integer mes;
+
+    @Column(nullable = false)
+    private Integer ano;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private TipoReceita tipoReceita;

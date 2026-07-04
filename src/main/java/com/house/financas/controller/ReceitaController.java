@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -29,8 +30,12 @@ public class ReceitaController {
     private final ReceitaService receitaService;
 
     @GetMapping
-    public ResponseEntity<List<ReceitaResponse>> listar(@AuthenticationPrincipal Usuario usuario) {
-        List<ReceitaResponse> receitas = receitaService.listar(usuario)
+    public ResponseEntity<List<ReceitaResponse>> listar(
+            @RequestParam(required = false) Integer ano,
+            @RequestParam(required = false) Integer mes,
+            @AuthenticationPrincipal Usuario usuario) {
+
+        List<ReceitaResponse> receitas = receitaService.listar(usuario, ano, mes)
                 .stream()
                 .map(ReceitaResponse::from)
                 .toList();

@@ -19,7 +19,15 @@ public class ReceitaService {
     private final ReceitaRepository receitaRepository;
 
     @Transactional(readOnly = true)
-    public List<Receita> listar(Usuario usuario) {
+    public List<Receita> listar(Usuario usuario, Integer ano, Integer mes) {
+        if (ano != null && mes != null) {
+            return receitaRepository.findByUsuarioIdAndAnoAndMesAndAtivoTrueOrderByDiaRecebimentoAsc(
+                    usuario.getId(),
+                    ano,
+                    mes
+            );
+        }
+
         return receitaRepository.findByUsuarioIdAndAtivoTrueOrderByDiaRecebimentoAsc(usuario.getId());
     }
 
@@ -55,6 +63,8 @@ public class ReceitaService {
         receita.setDescricao(request.getDescricao().trim());
         receita.setValor(request.getValor());
         receita.setDiaRecebimento(request.getDiaRecebimento());
+        receita.setMes(request.getMes());
+        receita.setAno(request.getAno());
         receita.setTipoReceita(request.getTipoReceita());
         receita.setOrigem(request.getOrigem().trim());
         receita.setRecorrente(request.getRecorrente());
