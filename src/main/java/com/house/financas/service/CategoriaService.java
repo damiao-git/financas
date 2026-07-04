@@ -1,40 +1,53 @@
 package com.house.financas.service;
 
+import com.house.financas.dto.CategoriaRequest;
+import com.house.financas.exception.ResourceNotFoundException;
 import com.house.financas.model.Categoria;
+import com.house.financas.model.Usuario;
 import com.house.financas.repository.CategoriaRepository;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
-@AllArgsConstructor
+@Transactional
+@RequiredArgsConstructor
 public class CategoriaService {
 
     private final CategoriaRepository categoriaRepository;
 
-    public Categoria buscarPorId(Long id) {
-        return categoriaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Categoria não encontrada"));
+    @Transactional(readOnly = true)
+    public List<Categoria> listar(Usuario usuario) {
+        return categoriaRepository.findByUsuarioIdAndAtivoTrueOrderByNomeAsc(usuario.getId());
     }
 
-    public List<Categoria> listarTodas() {
-        return categoriaRepository.findAll();
+    @Transactional(readOnly = true)
+    public Categoria buscarPorId(Long id, Usuario usuario) {
+        return categoriaRepository.findByIdAndUsuarioId(id, usuario.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Categoria nao encontrada"));
     }
 
-    public Categoria cadastrar(Categoria categoria) {
+    public Categoria cadastrar(CategoriaRequest request, Usuario usuario) {
+        Categoria categoria = new Categoria();
+        categoria.setNome(request.getNome().trim());
+        categoria.setUsuario(usuario);
+        categoria.setAtivo(true);
+
         return categoriaRepository.save(categoria);
     }
 
-    public Categoria atualizar(Long id, Categoria categoria) {
-        Categoria existente = buscarPorId(id);
-        existente.setNome(categoria.getNome());
-        return categoriaRepository.save(existente);
+    public Categoria atualizar(Long id, CategoriaRequest request, Usuario usuario) {
+        Categoria categoria = buscarPorId(id, usuario);
+        categoria.setNome(request.getNome().trim());
+
+        return categoriaRepository.save(categoria);
     }
 
-    public void deletar(Long id) {
-        Categoria existente = buscarPorId(id);
-        categoriaRepository.delete(existente);
+    public void deletar(Long id, Usuario usuario) {
+        Categoria categoria = buscarPorId(id, usuario);
+        categoria.setAtivo(false);
+        categoriaRepository.save(categoria);
     }
 }
-

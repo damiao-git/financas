@@ -1,44 +1,76 @@
 package com.house.financas.controller;
 
-import com.house.financas.dto.DespesaDto;
+import com.house.financas.dto.DespesaRequest;
+import com.house.financas.dto.DespesaResponse;
 import com.house.financas.model.Despesa;
+import com.house.financas.model.Usuario;
 import com.house.financas.service.DespesaService;
-import lombok.AllArgsConstructor;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/despesas")
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class DespesaController {
-    private DespesaService service;
+
+    private final DespesaService despesaService;
 
     @GetMapping
-    public ResponseEntity<List<Despesa>> listarTodasDespesas() {
-        return ResponseEntity.ok(service.listarTodasDespesas());
+    public ResponseEntity<List<DespesaResponse>> listar(@AuthenticationPrincipal Usuario usuario) {
+        List<DespesaResponse> despesas = despesaService.listar(usuario)
+                .stream()
+                .map(DespesaResponse::from)
+                .toList();
+
+        return ResponseEntity.ok(despesas);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Despesa> buscarDespesa(@PathVariable final Long id){
-        return ResponseEntity.ok(service.buscarDespesaById(id));
+    public ResponseEntity<DespesaResponse> buscar(
+            @PathVariable Long id,
+            @AuthenticationPrincipal Usuario usuario) {
+
+        return ResponseEntity.ok(DespesaResponse.from(despesaService.buscarPorId(id, usuario)));
     }
+
     @PostMapping
-    public ResponseEntity<?> cadastrarDespesa(@RequestBody final DespesaDto despesaDto) {
-        service.cadastrarDespesa(despesaDto);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<DespesaResponse> cadastrar(
+            @RequestBody @Valid DespesaRequest request,
+            @AuthenticationPrincipal Usuario usuario) {
+
+        Despesa despesa = despesaService.cadastrar(request, usuario);
+        return ResponseEntity.status(HttpStatus.CREATED).body(DespesaResponse.from(despesa));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Despesa> atualizarDespesa(@PathVariable final Long id, @RequestBody DespesaDto categoria) {
-        service.atualizarDespesa(id, categoria);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<DespesaResponse> atualizar(
+            @PathVariable Long id,
+            @RequestBody @Valid DespesaRequest request,
+            @AuthenticationPrincipal Usuario usuario) {
+
+        Despesa despesa = despesaService.atualizar(id, request, usuario);
+        return ResponseEntity.ok(DespesaResponse.from(despesa));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletarDespesa(@PathVariable final Long id){
-        service.deletarDespesaById(id);
+    public ResponseEntity<Void> deletar(
+            @PathVariable Long id,
+            @AuthenticationPrincipal Usuario usuario) {
+
+        despesaService.deletar(id, usuario);
         return ResponseEntity.noContent().build();
     }
 }

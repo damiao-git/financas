@@ -1,64 +1,74 @@
 package com.house.financas.service;
 
-import com.house.financas.dto.DespesaDto;
+import com.house.financas.dto.DespesaRequest;
+import com.house.financas.exception.ResourceNotFoundException;
 import com.house.financas.model.Categoria;
 import com.house.financas.model.Despesa;
+import com.house.financas.model.Usuario;
 import com.house.financas.repository.CategoriaRepository;
 import com.house.financas.repository.DespesaRepository;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
-@AllArgsConstructor
+@Transactional
+@RequiredArgsConstructor
 public class DespesaService {
-    private DespesaRepository repository;
-    private CategoriaRepository categoriaRepository;
-    private CategoriaService categoriaService;
 
-    public Despesa buscarDespesaById(final Long id){
-        return repository.findById(id).orElseThrow(() -> new RuntimeException("Despesa não encontrada"));
+    private final DespesaRepository despesaRepository;
+    private final CategoriaRepository categoriaRepository;
+
+    @Transactional(readOnly = true)
+    public List<Despesa> listar(Usuario usuario) {
+        return despesaRepository.findByUsuarioIdAndAtivoTrueOrderByDiaVencimentoAsc(usuario.getId());
     }
 
-    public List<Despesa> listarTodasDespesas(){
-        return repository.findAll();
+    @Transactional(readOnly = true)
+    public Despesa buscarPorId(Long id, Usuario usuario) {
+        return despesaRepository.findByIdAndUsuarioId(id, usuario.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Despesa nao encontrada"));
     }
 
-    public void cadastrarDespesa(final DespesaDto despesaDto){
-        Optional<Categoria> categoria = categoriaRepository.findById(despesaDto.getCategoriaId());
-        if(!categoria.isPresent()){
-            throw new RuntimeException("Categoria não encontrada");
-        }else{
-            Despesa despesa = new Despesa();
-            despesa.setDescricao(despesaDto.getDescricao());
-            despesa.setDiaVencimento(despesaDto.getDiaVencimento());
-            despesa.setCategoria(categoria.get());
-            despesa.setDiaVencimento(despesaDto.getDiaVencimento());
-            despesa.setValor(despesaDto.getValor());
-            repository.save(despesa);
-        }
+    public Despesa cadastrar(DespesaRequest request, Usuario usuario) {
+        Categoria categoria = buscarCategoriaDoUsuario(request.getCategoriaId(), usuario);
+
+        Despesa despesa = new Despesa();
+        preencherDespesa(despesa, request, categoria);
+        despesa.setUsuario(usuario);
+        despesa.setAtivo(true);
+
+        return despesaRepository.save(despesa);
     }
 
-    public void atualizarDespesa(final Long id, final DespesaDto despesa){
-        repository.findById(id)
-                .map(c -> {
-                    c.setCategoria(categoriaService.buscarPorId(despesa.getCategoriaId()));
-                    c.setDiaVencimento(despesa.getDiaVencimento());
-                    c.setDescricao(despesa.getDescricao());
-                    c.setValor(despesa.getValor());
-                    return repository.save(c);
-                })
-                .orElseThrow(() -> new RuntimeException("Despesa não encontrada"));
+    public Despesa atualizar(Long id, DespesaRequest request, Usuario usuario) {
+        Despesa despesa = buscarPorId(id, usuario);
+        Categoria categoria = buscarCategoriaDoUsuario(request.getCategoriaId(), usuario);
+        preencherDespesa(despesa, request, categoria);
+
+        return despesaRepository.save(despesa);
     }
 
-    public void deletarDespesaById(final long id){
-        Optional<Despesa> despesaEncontrada = repository.findById(id);
-        if(despesaEncontrada.isEmpty()){
-            throw new RuntimeException("Despesa não encontrada");
-        }else{
-            repository.deleteById(id);
-        }
+    public void deletar(Long id, Usuario usuario) {
+        Despesa despesa = buscarPorId(id, usuario);
+        despesa.setAtivo(false);
+        despesaRepository.save(despesa);
+    }
+
+    private Categoria buscarCategoriaDoUsuario(Long categoriaId, Usuario usuario) {
+        return categoriaRepository.findByIdAndUsuarioId(categoriaId, usuario.getId())
+                .filter(categoria -> Boolean.TRUE.equals(categoria.getAtivo()))
+                .orElseThrow(() -> new ResourceNotFoundException("Categoria nao encontrada"));
+    }
+
+    private void preencherDespesa(Despesa despesa, DespesaRequest request, Categoria categoria) {
+        despesa.setDescricao(request.getDescricao().trim());
+        despesa.setValor(request.getValor());
+        despesa.setDiaVencimento(request.getDiaVencimento());
+        despesa.setTipoDespesa(request.getTipoDespesa());
+        despesa.setRecorrente(request.getRecorrente());
+        despesa.setCategoria(categoria);
     }
 }
