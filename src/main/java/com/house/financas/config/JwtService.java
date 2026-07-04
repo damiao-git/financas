@@ -1,53 +1,60 @@
 package com.house.financas.config;
 
 import com.house.financas.model.Usuario;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.security.Key;
-import java.util.Base64;
 import java.util.Date;
 
 @Service
 public class JwtService {
 
-    private static final String SECRET_KEY = "83Wr/IwHkVHi79LWSmgGMebVDDP2pq6h+Pj/ZC7K3wY="; // depois vai pro application.yml
-    private static final long EXPIRATION = 1000 * 60 * 60 * 2; // 2h
+    @Value("${monexa.jwt.secret:83Wr/IwHkVHi79LWSmgGMebVDDP2pq6h+Pj/ZC7K3wY=}")
+    private String secretKey;
 
-    private Key getSignKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(
-                Base64.getEncoder().encodeToString(SECRET_KEY.getBytes())
-        );
-        return Keys.hmacShaKeyFor(keyBytes);
-    }
+    @Value("${monexa.jwt.expiration-ms:7200000}")
+    private long expiration;
 
     public String gerarToken(Usuario usuario) {
         return Jwts.builder()
                 .setSubject(usuario.getEmail())
+                .claim("id", usuario.getId())
+                .claim("nome", usuario.getNome())
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION))
+                .setExpiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(getSignKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
     public String extrairEmail(String token) {
+        return extrairClaims(token).getSubject();
+    }
+
+    public boolean tokenValido(String token, Usuario usuario) {
+        String email = extrairEmail(token);
+        return email.equals(usuario.getEmail()) && !tokenExpirado(token) && Boolean.TRUE.equals(usuario.getAtivo());
+    }
+
+    private boolean tokenExpirado(String token) {
+        return extrairClaims(token).getExpiration().before(new Date());
+    }
+
+    private Claims extrairClaims(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(getSignKey())
                 .build()
                 .parseClaimsJws(token)
-                .getBody()
-                .getSubject();
+                .getBody();
     }
 
-    public boolean tokenValido(String token) {
-        try {
-            extrairEmail(token);
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
+    private Key getSignKey() {
+        byte[] keyBytes = Decoders.BASE64.decode(secretKey);
+        return Keys.hmacShaKeyFor(keyBytes);
     }
 }

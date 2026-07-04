@@ -4,8 +4,10 @@ import com.house.financas.config.JwtService;
 import com.house.financas.dto.LoginRequest;
 import com.house.financas.dto.LoginResponse;
 import com.house.financas.dto.RegisterRequest;
+import com.house.financas.dto.UsuarioResponse;
 import com.house.financas.model.Usuario;
 import com.house.financas.service.UsuarioService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,17 +25,13 @@ public class AuthController {
     private final JwtService jwtService;
 
     @PostMapping("/register")
-    public ResponseEntity<Usuario> register(@RequestBody RegisterRequest request) {
-        Usuario usuario = usuarioService.cadastrar(
-                request.getNome(),
-                request.getEmail(),
-                request.getSenha()
-        );
-        return ResponseEntity.status(HttpStatus.CREATED).body(usuario);
+    public ResponseEntity<UsuarioResponse> register(@RequestBody @Valid RegisterRequest request) {
+        Usuario usuario = usuarioService.cadastrar(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(UsuarioResponse.from(usuario));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
+    public ResponseEntity<LoginResponse> login(@RequestBody @Valid LoginRequest request) {
         Usuario usuario = usuarioService.autenticar(
                 request.getEmail(),
                 request.getSenha()
@@ -43,4 +41,3 @@ public class AuthController {
         return ResponseEntity.ok(new LoginResponse(token));
     }
 }
-

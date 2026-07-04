@@ -2,6 +2,7 @@ package com.house.financas.config;
 
 import com.house.financas.model.Usuario;
 import com.house.financas.repository.UsuarioRepository;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,29 +24,33 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final UsuarioRepository usuarioRepository;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain) throws ServletException, IOException {
+
         String authHeader = request.getHeader("Authorization");
-        if(authHeader == null || !authHeader.startsWith("Bearer")){
+
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        String token = authHeader.substring(7);
-        String email = jwtService.extrairEmail(token);
+        try {
+            String token = authHeader.substring(7);
+            String email = jwtService.extrairEmail(token);
 
-        if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                Usuario usuario = usuarioRepository.findByEmail(email).orElse(null);
 
-            Usuario usuario = usuarioRepository.findByEmail(email).orElse(null);
+                if (usuario != null && jwtService.tokenValido(token, usuario)) {
+                    UsernamePasswordAuthenticationToken authentication =
+                            new UsernamePasswordAuthenticationToken(usuario, null, List.of());
 
-            if (usuario != null && jwtService.tokenValido(token)) {
-
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(
-                                usuario, null, List.of()
-                        );
-
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                }
             }
+        } catch (JwtException | IllegalArgumentException exception) {
+            SecurityContextHolder.clearContext();
         }
 
         filterChain.doFilter(request, response);
