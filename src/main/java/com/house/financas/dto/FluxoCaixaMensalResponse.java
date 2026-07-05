@@ -9,6 +9,7 @@ public record FluxoCaixaMensalResponse(
         BigDecimal totalDespesasPrevistas,
         BigDecimal totalContasPagas,
         BigDecimal totalContasPendentes,
+        BigDecimal totalAmortizacoes,
         BigDecimal saldoPrevisto,
         BigDecimal saldoRealizado
 ) {

@@ -3,6 +3,7 @@ package com.house.financas.service;
 import com.house.financas.dto.FluxoCaixaMensalResponse;
 import com.house.financas.model.Usuario;
 import com.house.financas.model.enums.StatusContaMensal;
+import com.house.financas.repository.AmortizacaoRepository;
 import com.house.financas.repository.ContaMensalRepository;
 import com.house.financas.repository.PagamentoRepository;
 import com.house.financas.repository.ReceitaRepository;
@@ -19,6 +20,7 @@ public class FluxoCaixaService {
     private final ReceitaRepository receitaRepository;
     private final ContaMensalRepository contaMensalRepository;
     private final PagamentoRepository pagamentoRepository;
+    private final AmortizacaoRepository amortizacaoRepository;
 
     @Transactional(readOnly = true)
     public FluxoCaixaMensalResponse consultarMensal(Usuario usuario, Integer ano, Integer mes) {
@@ -39,9 +41,16 @@ public class FluxoCaixaService {
                         StatusContaMensal.PENDENTE
                 )
         );
+        BigDecimal totalAmortizacoes = valorOuZero(
+                amortizacaoRepository.somarAmortizacoesAtivasPorCompetencia(usuario.getId(), ano, mes)
+        );
 
-        BigDecimal saldoPrevisto = totalReceitas.subtract(totalDespesasPrevistas);
-        BigDecimal saldoRealizado = totalReceitas.subtract(totalContasPagas);
+        BigDecimal saldoPrevisto = totalReceitas
+                .subtract(totalDespesasPrevistas)
+                .subtract(totalAmortizacoes);
+        BigDecimal saldoRealizado = totalReceitas
+                .subtract(totalContasPagas)
+                .subtract(totalAmortizacoes);
 
         return new FluxoCaixaMensalResponse(
                 ano,
@@ -50,6 +59,7 @@ public class FluxoCaixaService {
                 totalDespesasPrevistas,
                 totalContasPagas,
                 totalContasPendentes,
+                totalAmortizacoes,
                 saldoPrevisto,
                 saldoRealizado
         );
