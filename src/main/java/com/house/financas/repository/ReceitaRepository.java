@@ -1,6 +1,7 @@
 package com.house.financas.repository;
 
 import com.house.financas.model.Receita;
+import com.house.financas.model.enums.TipoReceita;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -13,6 +14,8 @@ public interface ReceitaRepository extends JpaRepository<Receita, Long> {
 
     List<Receita> findByUsuarioIdAndAtivoTrueOrderByDiaRecebimentoAsc(Long usuarioId);
 
+    List<Receita> findByUsuarioIdAndRecorrenteTrueAndAtivoTrue(Long usuarioId);
+
     List<Receita> findByUsuarioIdAndAnoAndMesAndAtivoTrueOrderByDiaRecebimentoAsc(
             Long usuarioId,
             Integer ano,
@@ -20,6 +23,15 @@ public interface ReceitaRepository extends JpaRepository<Receita, Long> {
     );
 
     Optional<Receita> findByIdAndUsuarioId(Long id, Long usuarioId);
+
+    boolean existsByUsuarioIdAndAnoAndMesAndDescricaoIgnoreCaseAndOrigemIgnoreCaseAndTipoReceitaAndAtivoTrue(
+            Long usuarioId,
+            Integer ano,
+            Integer mes,
+            String descricao,
+            String origem,
+            TipoReceita tipoReceita
+    );
 
     @Query("""
             select coalesce(sum(receita.valor), 0)

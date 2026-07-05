@@ -22,6 +22,20 @@ public interface ContaMensalRepository extends JpaRepository<ContaMensal, Long> 
 
     Optional<ContaMensal> findByIdAndUsuarioId(Long id, Long usuarioId);
 
+    boolean existsByUsuarioIdAndDespesaIdAndAnoAndMesAndAtivoTrue(
+            Long usuarioId,
+            Long despesaId,
+            Integer ano,
+            Integer mes
+    );
+
+    boolean existsByUsuarioIdAndDividaIdAndAnoAndMesAndAtivoTrue(
+            Long usuarioId,
+            Long dividaId,
+            Integer ano,
+            Integer mes
+    );
+
     @Query("""
             select coalesce(sum(conta.valorPrevisto), 0)
             from ContaMensal conta

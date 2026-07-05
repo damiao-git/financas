@@ -19,6 +19,7 @@ public record ContaMensalResponse(
         Boolean ativo,
         CategoriaResumoResponse categoria,
         Long despesaId,
+        Long dividaId,
         LocalDateTime dataCriacao,
         LocalDateTime dataAtualizacao
 ) {
@@ -32,6 +33,10 @@ public record ContaMensalResponse(
                 ? null
                 : contaMensal.getDespesa().getId();
 
+        Long dividaId = contaMensal.getDivida() == null
+                ? null
+                : contaMensal.getDivida().getId();
+
         return new ContaMensalResponse(
                 contaMensal.getId(),
                 contaMensal.getDescricao(),
@@ -44,6 +49,7 @@ public record ContaMensalResponse(
                 contaMensal.getAtivo(),
                 categoria,
                 despesaId,
+                dividaId,
                 contaMensal.getDataCriacao(),
                 contaMensal.getDataAtualizacao()
         );

@@ -66,6 +66,10 @@ public class ContaMensal {
     @JoinColumn(name = "despesa_id")
     private Despesa despesa;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "divida_id")
+    private Divida divida;
+
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "usuario_id", nullable = false)
     private Usuario usuario;
