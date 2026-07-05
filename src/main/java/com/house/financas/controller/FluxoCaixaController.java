@@ -1,6 +1,7 @@
 package com.house.financas.controller;
 
 import com.house.financas.dto.FluxoCaixaMensalResponse;
+import com.house.financas.dto.FluxoCaixaProjecaoResponse;
 import com.house.financas.model.Usuario;
 import com.house.financas.service.FluxoCaixaService;
 import jakarta.validation.constraints.Max;
@@ -14,6 +15,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.math.BigDecimal;
 
 @Validated
 @RestController
@@ -30,5 +33,22 @@ public class FluxoCaixaController {
             @AuthenticationPrincipal Usuario usuario) {
 
         return ResponseEntity.ok(fluxoCaixaService.consultarMensal(usuario, ano, mes));
+    }
+
+    @GetMapping("/projecao")
+    public ResponseEntity<FluxoCaixaProjecaoResponse> projetar(
+            @RequestParam @NotNull @Min(2000) Integer anoInicial,
+            @RequestParam @NotNull @Min(1) @Max(12) Integer mesInicial,
+            @RequestParam @NotNull @Min(1) @Max(120) Integer quantidadeMeses,
+            @RequestParam(defaultValue = "0") BigDecimal saldoInicial,
+            @AuthenticationPrincipal Usuario usuario) {
+
+        return ResponseEntity.ok(fluxoCaixaService.projetar(
+                usuario,
+                anoInicial,
+                mesInicial,
+                quantidadeMeses,
+                saldoInicial
+        ));
     }
 }
