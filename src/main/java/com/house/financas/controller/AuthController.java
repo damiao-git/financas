@@ -1,11 +1,13 @@
 package com.house.financas.controller;
 
 import com.house.financas.config.JwtService;
+import com.house.financas.dto.GoogleLoginRequest;
 import com.house.financas.dto.LoginRequest;
 import com.house.financas.dto.LoginResponse;
 import com.house.financas.dto.RegisterRequest;
 import com.house.financas.dto.UsuarioResponse;
 import com.house.financas.model.Usuario;
+import com.house.financas.service.GoogleAuthService;
 import com.house.financas.service.UsuarioService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final UsuarioService usuarioService;
+    private final GoogleAuthService googleAuthService;
     private final JwtService jwtService;
 
     @PostMapping("/register")
@@ -40,4 +43,15 @@ public class AuthController {
         String token = jwtService.gerarToken(usuario);
         return ResponseEntity.ok(new LoginResponse(token));
     }
+
+    @PostMapping("/google")
+    public ResponseEntity<LoginResponse> google(@RequestBody @Valid GoogleLoginRequest request) {
+        GoogleAuthService.GoogleUserInfo googleUser = googleAuthService.validarToken(request.getIdToken());
+        Usuario usuario = usuarioService.autenticarGoogle(googleUser.nome(), googleUser.email());
+        String token = jwtService.gerarToken(usuario);
+        return ResponseEntity.ok(new LoginResponse(token));
+    }
 }
+
+
+
