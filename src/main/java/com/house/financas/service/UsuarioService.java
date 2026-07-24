@@ -11,6 +11,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.UUID;
+
 @Service
 @Transactional
 public class UsuarioService {
@@ -42,6 +44,29 @@ public class UsuarioService {
         usuario.setAtivo(true);
 
         return usuarioRepository.save(usuario);
+    }
+
+    public Usuario autenticarGoogle(String nome, String email) {
+        String emailNormalizado = normalizarEmail(email);
+
+        return usuarioRepository.findByEmail(emailNormalizado)
+                .map(usuario -> {
+                    if (!Boolean.TRUE.equals(usuario.getAtivo())) {
+                        usuario.setAtivo(true);
+                    }
+                    if (usuario.getNome() == null || usuario.getNome().isBlank()) {
+                        usuario.setNome(nome.trim());
+                    }
+                    return usuarioRepository.save(usuario);
+                })
+                .orElseGet(() -> {
+                    Usuario usuario = new Usuario();
+                    usuario.setNome(nome.trim());
+                    usuario.setEmail(emailNormalizado);
+                    usuario.setSenha(passwordEncoder.encode(UUID.randomUUID().toString()));
+                    usuario.setAtivo(true);
+                    return usuarioRepository.save(usuario);
+                });
     }
 
     @Transactional(readOnly = true)
@@ -106,3 +131,5 @@ public class UsuarioService {
         return email.trim().toLowerCase();
     }
 }
+
+
