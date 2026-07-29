@@ -23,7 +23,7 @@ public class GoogleAuthService {
 
     public GoogleUserInfo validarToken(String idToken) {
         if (clientId == null || clientId.isBlank()) {
-            throw new DomainException("Login com Google nao configurado");
+            throw new DomainException("Login com Google não configurado");
         }
 
         GoogleTokenInfo tokenInfo;
@@ -33,11 +33,11 @@ public class GoogleAuthService {
                     .retrieve()
                     .body(GoogleTokenInfo.class);
         } catch (Exception exception) {
-            throw new DomainException("Token do Google invalido");
+            throw new DomainException("Token do Google inválido");
         }
 
         if (tokenInfo == null || tokenInfo.email() == null || tokenInfo.email().isBlank()) {
-            throw new DomainException("Token do Google invalido");
+            throw new DomainException("Token do Google inválido");
         }
 
         if (!clientId.equals(tokenInfo.audience())) {
@@ -45,7 +45,7 @@ public class GoogleAuthService {
         }
 
         if (!Boolean.parseBoolean(tokenInfo.emailVerified())) {
-            throw new DomainException("Email do Google nao verificado");
+            throw new DomainException("E-mail do Google não verificado");
         }
 
         String nome = tokenInfo.name() == null || tokenInfo.name().isBlank()

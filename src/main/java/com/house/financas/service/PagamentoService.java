@@ -32,7 +32,7 @@ public class PagamentoService {
     @Transactional(readOnly = true)
     public Pagamento buscarPorId(Long id, Usuario usuario) {
         return pagamentoRepository.findByIdAndUsuarioId(id, usuario.getId())
-                .orElseThrow(() -> new ResourceNotFoundException("Pagamento nao encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Pagamento não encontrado"));
     }
 
     public Pagamento cadastrar(Long contaMensalId, PagamentoRequest request, Usuario usuario) {

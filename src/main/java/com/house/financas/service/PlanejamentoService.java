@@ -167,7 +167,7 @@ public class PlanejamentoService {
                 conta.setMes(competencia.getMonthValue());
                 conta.setAno(competencia.getYear());
                 conta.setStatus(StatusContaMensal.PENDENTE);
-                conta.setObservacao("Gerada automaticamente por divida");
+                conta.setObservacao("Gerada automaticamente por dívida");
                 conta.setAtivo(true);
                 conta.setDivida(divida);
                 conta.setUsuario(usuario);

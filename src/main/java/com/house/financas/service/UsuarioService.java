@@ -49,7 +49,7 @@ public class UsuarioService {
         String emailNormalizado = normalizarEmail(email);
 
         if (usuarioRepository.existsByEmail(emailNormalizado)) {
-            throw new DomainException("Email ja cadastrado");
+            throw new DomainException("E-mail já cadastrado");
         }
 
         Usuario usuario = new Usuario();
@@ -104,16 +104,16 @@ public class UsuarioService {
         String emailNormalizado = normalizarEmail(email);
 
         Usuario usuario = usuarioRepository.findByEmail(emailNormalizado)
-                .orElseThrow(() -> new BadCredentialsException("Email ou senha invalidos"));
+                .orElseThrow(() -> new BadCredentialsException("E-mail ou senha inválidos"));
 
         if (!Boolean.TRUE.equals(usuario.getAtivo())) {
-            throw new BadCredentialsException("Usuario inativo");
+            throw new BadCredentialsException("Usuário inativo");
         }
 
         garantirAdminConfigurado(usuario);
 
         if (!passwordEncoder.matches(senha, usuario.getSenha())) {
-            throw new BadCredentialsException("Email ou senha invalidos");
+            throw new BadCredentialsException("E-mail ou senha inválidos");
         }
 
         return usuario;
@@ -127,7 +127,7 @@ public class UsuarioService {
     @Transactional(readOnly = true)
     public Usuario buscarPorId(Long id) {
         return usuarioRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario nao encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
     }
 
     public Usuario sincronizarRoleConfigurada(Usuario usuario) {
@@ -154,7 +154,7 @@ public class UsuarioService {
             usuarioRepository.findByEmail(emailNormalizado)
                     .filter(encontrado -> !encontrado.getId().equals(id))
                     .ifPresent(encontrado -> {
-                        throw new DomainException("Email ja cadastrado");
+                        throw new DomainException("E-mail já cadastrado");
                     });
             usuario.setEmail(emailNormalizado);
         }
@@ -222,7 +222,7 @@ public class UsuarioService {
 
     private void validarNaoEhProprioUsuario(Long id, Usuario adminAutenticado) {
         if (adminAutenticado != null && id.equals(adminAutenticado.getId())) {
-            throw new DomainException("Nao e permitido alterar seu proprio acesso administrativo");
+            throw new DomainException("Não é permitido alterar seu próprio acesso administrativo");
         }
     }
 }

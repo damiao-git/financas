@@ -34,7 +34,7 @@ public class ReceitaService {
     @Transactional(readOnly = true)
     public Receita buscarPorId(Long id, Usuario usuario) {
         return receitaRepository.findByIdAndUsuarioId(id, usuario.getId())
-                .orElseThrow(() -> new ResourceNotFoundException("Receita nao encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("Receita não encontrada"));
     }
 
     public Receita cadastrar(ReceitaRequest request, Usuario usuario) {

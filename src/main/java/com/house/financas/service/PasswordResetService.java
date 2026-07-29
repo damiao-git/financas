@@ -59,10 +59,10 @@ public class PasswordResetService {
 
     public void resetarSenha(String token, String novaSenha) {
         PasswordResetToken resetToken = tokenRepository.findByTokenHashAndUsedAtIsNull(hash(token))
-                .orElseThrow(() -> new DomainException("Token de recuperacao invalido ou expirado"));
+                .orElseThrow(() -> new DomainException("Token de recuperação inválido ou expirado"));
 
         if (resetToken.isExpired() || resetToken.isUsed()) {
-            throw new DomainException("Token de recuperacao invalido ou expirado");
+            throw new DomainException("Token de recuperação inválido ou expirado");
         }
 
         usuarioService.alterarSenha(resetToken.getUsuario(), novaSenha);
@@ -94,7 +94,7 @@ public class PasswordResetService {
             byte[] hash = digest.digest(token.getBytes(StandardCharsets.UTF_8));
             return HexFormat.of().formatHex(hash);
         } catch (NoSuchAlgorithmException exception) {
-            throw new IllegalStateException("SHA-256 indisponivel", exception);
+            throw new IllegalStateException("SHA-256 indisponível", exception);
         }
     }
 }

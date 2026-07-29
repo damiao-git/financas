@@ -18,30 +18,30 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class ContaMensalRequest {
 
-    @NotBlank(message = "Descricao e obrigatoria")
-    @Size(max = 150, message = "Descricao deve ter no maximo 150 caracteres")
+    @NotBlank(message = "Descrição é obrigatória")
+    @Size(max = 150, message = "Descrição deve ter no máximo 150 caracteres")
     private String descricao;
 
-    @NotNull(message = "Valor previsto e obrigatorio")
+    @NotNull(message = "Valor previsto é obrigatório")
     @DecimalMin(value = "0.01", message = "Valor previsto deve ser maior que zero")
     private BigDecimal valorPrevisto;
 
-    @NotNull(message = "Data de vencimento e obrigatoria")
+    @NotNull(message = "Data de vencimento é obrigatória")
     private LocalDate dataVencimento;
 
-    @NotNull(message = "Mes e obrigatorio")
-    @Min(value = 1, message = "Mes deve ser no minimo 1")
-    @Max(value = 12, message = "Mes deve ser no maximo 12")
+    @NotNull(message = "Mês é obrigatório")
+    @Min(value = 1, message = "Mês deve ser no mínimo 1")
+    @Max(value = 12, message = "Mês deve ser no máximo 12")
     private Integer mes;
 
-    @NotNull(message = "Ano e obrigatorio")
-    @Min(value = 2000, message = "Ano deve ser no minimo 2000")
+    @NotNull(message = "Ano é obrigatório")
+    @Min(value = 2000, message = "Ano deve ser no mínimo 2000")
     private Integer ano;
 
     private Long categoriaId;
 
     private Long despesaId;
 
-    @Size(max = 255, message = "Observacao deve ter no maximo 255 caracteres")
+    @Size(max = 255, message = "Observação deve ter no máximo 255 caracteres")
     private String observacao;
 }

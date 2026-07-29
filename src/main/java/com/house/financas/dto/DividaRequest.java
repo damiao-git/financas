@@ -18,45 +18,45 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 public class DividaRequest {
 
-    @NotBlank(message = "Descricao e obrigatoria")
-    @Size(max = 150, message = "Descricao deve ter no maximo 150 caracteres")
+    @NotBlank(message = "Descrição é obrigatória")
+    @Size(max = 150, message = "Descrição deve ter no máximo 150 caracteres")
     private String descricao;
 
-    @NotBlank(message = "Instituicao e obrigatoria")
-    @Size(max = 150, message = "Instituicao deve ter no maximo 150 caracteres")
+    @NotBlank(message = "Instituição é obrigatória")
+    @Size(max = 150, message = "Instituição deve ter no máximo 150 caracteres")
     private String instituicao;
 
-    @NotNull(message = "Tipo da divida e obrigatorio")
+    @NotNull(message = "Tipo da dívida é obrigatório")
     private TipoDivida tipoDivida;
 
-    @NotNull(message = "Saldo inicial e obrigatorio")
+    @NotNull(message = "Saldo inicial é obrigatório")
     @DecimalMin(value = "0.01", message = "Saldo inicial deve ser maior que zero")
     private BigDecimal saldoInicial;
 
-    @NotNull(message = "Saldo atual e obrigatorio")
-    @DecimalMin(value = "0.00", message = "Saldo atual nao pode ser negativo")
+    @NotNull(message = "Saldo atual é obrigatório")
+    @DecimalMin(value = "0.00", message = "Saldo atual não pode ser negativo")
     private BigDecimal saldoAtual;
 
-    @NotNull(message = "Valor da parcela e obrigatorio")
+    @NotNull(message = "Valor da parcela é obrigatório")
     @DecimalMin(value = "0.01", message = "Valor da parcela deve ser maior que zero")
     private BigDecimal valorParcela;
 
-    @NotNull(message = "Dia de vencimento e obrigatorio")
-    @Min(value = 1, message = "Dia de vencimento deve ser no minimo 1")
-    @Max(value = 31, message = "Dia de vencimento deve ser no maximo 31")
+    @NotNull(message = "Dia de vencimento é obrigatório")
+    @Min(value = 1, message = "Dia de vencimento deve ser no mínimo 1")
+    @Max(value = 31, message = "Dia de vencimento deve ser no máximo 31")
     private Integer diaVencimento;
 
-    @NotNull(message = "Quantidade de parcelas e obrigatoria")
-    @Min(value = 1, message = "Quantidade de parcelas deve ser no minimo 1")
+    @NotNull(message = "Quantidade de parcelas é obrigatória")
+    @Min(value = 1, message = "Quantidade de parcelas deve ser no mínimo 1")
     private Integer quantidadeParcelas;
 
-    @NotNull(message = "Parcelas pagas e obrigatorio")
-    @Min(value = 0, message = "Parcelas pagas nao pode ser negativo")
+    @NotNull(message = "Parcelas pagas são obrigatórias")
+    @Min(value = 0, message = "Parcelas pagas não podem ser negativas")
     private Integer parcelasPagas;
 
-    @DecimalMin(value = "0.00", message = "Taxa de juros mensal nao pode ser negativa")
+    @DecimalMin(value = "0.00", message = "Taxa de juros mensal não pode ser negativa")
     private BigDecimal taxaJurosMensal;
 
-    @Size(max = 255, message = "Observacao deve ter no maximo 255 caracteres")
+    @Size(max = 255, message = "Observação deve ter no máximo 255 caracteres")
     private String observacao;
 }

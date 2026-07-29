@@ -11,11 +11,11 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class UsuarioUpdateRequest {
 
-    @Size(max = 150, message = "Nome deve ter no maximo 150 caracteres")
+    @Size(max = 150, message = "Nome deve ter no máximo 150 caracteres")
     private String nome;
 
-    @Email(message = "Email invalido")
-    @Size(max = 150, message = "Email deve ter no maximo 150 caracteres")
+    @Email(message = "E-mail inválido")
+    @Size(max = 150, message = "E-mail deve ter no máximo 150 caracteres")
     private String email;
 
     @Size(min = 6, max = 100, message = "Senha deve ter entre 6 e 100 caracteres")

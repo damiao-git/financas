@@ -15,13 +15,13 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class PagamentoRequest {
 
-    @NotNull(message = "Valor pago e obrigatorio")
+    @NotNull(message = "Valor pago é obrigatório")
     @DecimalMin(value = "0.01", message = "Valor pago deve ser maior que zero")
     private BigDecimal valorPago;
 
-    @NotNull(message = "Data de pagamento e obrigatoria")
+    @NotNull(message = "Data de pagamento é obrigatória")
     private LocalDate dataPagamento;
 
-    @Size(max = 255, message = "Observacao deve ter no maximo 255 caracteres")
+    @Size(max = 255, message = "Observação deve ter no máximo 255 caracteres")
     private String observacao;
 }

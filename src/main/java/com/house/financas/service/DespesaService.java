@@ -29,7 +29,7 @@ public class DespesaService {
     @Transactional(readOnly = true)
     public Despesa buscarPorId(Long id, Usuario usuario) {
         return despesaRepository.findByIdAndUsuarioId(id, usuario.getId())
-                .orElseThrow(() -> new ResourceNotFoundException("Despesa nao encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("Despesa não encontrada"));
     }
 
     public Despesa cadastrar(DespesaRequest request, Usuario usuario) {
@@ -60,7 +60,7 @@ public class DespesaService {
     private Categoria buscarCategoriaDoUsuario(Long categoriaId, Usuario usuario) {
         return categoriaRepository.findByIdAndUsuarioId(categoriaId, usuario.getId())
                 .filter(categoria -> Boolean.TRUE.equals(categoria.getAtivo()))
-                .orElseThrow(() -> new ResourceNotFoundException("Categoria nao encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("Categoria não encontrada"));
     }
 
     private void preencherDespesa(Despesa despesa, DespesaRequest request, Categoria categoria) {

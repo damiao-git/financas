@@ -58,10 +58,10 @@ public class ResendEmailService implements EmailService {
                     exception.getStatusCode(),
                     exception.getResponseBodyAsString()
             );
-            throw new DomainException("Nao foi possivel enviar o email de recuperacao");
+            throw new DomainException("Não foi possível enviar o e-mail de recuperação");
         } catch (Exception exception) {
             LOGGER.error("Erro inesperado ao enviar email pelo Resend", exception);
-            throw new DomainException("Nao foi possivel enviar o email de recuperacao");
+            throw new DomainException("Não foi possível enviar o e-mail de recuperação");
         }
     }
 
@@ -70,7 +70,7 @@ public class ResendEmailService implements EmailService {
                 <p>Ola, %s.</p>
                 <p>Recebemos uma solicitacao para redefinir sua senha da Monexa.</p>
                 <p><a href="%s">Clique aqui para criar uma nova senha</a>.</p>
-                <p>Este link expira em 30 minutos. Se voce nao solicitou, ignore este email.</p>
+                <p>Este link expira em 30 minutos. Se você não solicitou, ignore este e-mail.</p>
                 """.formatted(nome, resetLink);
     }
 

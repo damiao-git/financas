@@ -41,7 +41,7 @@ public class ContaMensalService {
     @Transactional(readOnly = true)
     public ContaMensal buscarPorId(Long id, Usuario usuario) {
         return contaMensalRepository.findByIdAndUsuarioId(id, usuario.getId())
-                .orElseThrow(() -> new ResourceNotFoundException("Conta mensal nao encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("Conta mensal não encontrada"));
     }
 
     public ContaMensal cadastrar(ContaMensalRequest request, Usuario usuario) {
@@ -96,7 +96,7 @@ public class ContaMensalService {
 
         return categoriaRepository.findByIdAndUsuarioId(categoriaId, usuario.getId())
                 .filter(categoria -> Boolean.TRUE.equals(categoria.getAtivo()))
-                .orElseThrow(() -> new ResourceNotFoundException("Categoria nao encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("Categoria não encontrada"));
     }
 
     private Despesa buscarDespesa(Long despesaId, Usuario usuario) {
@@ -106,7 +106,7 @@ public class ContaMensalService {
 
         return despesaRepository.findByIdAndUsuarioId(despesaId, usuario.getId())
                 .filter(despesa -> Boolean.TRUE.equals(despesa.getAtivo()))
-                .orElseThrow(() -> new ResourceNotFoundException("Despesa nao encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("Despesa não encontrada"));
     }
 
     private String normalizarTextoOpcional(String texto) {

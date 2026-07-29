@@ -11,6 +11,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class AdminUsuarioRoleRequest {
 
-    @NotNull(message = "Perfil e obrigatorio")
+    @NotNull(message = "Perfil é obrigatório")
     private RoleUsuario role;
 }

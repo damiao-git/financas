@@ -18,35 +18,35 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 public class ReceitaRequest {
 
-    @NotBlank(message = "Descricao e obrigatoria")
-    @Size(max = 150, message = "Descricao deve ter no maximo 150 caracteres")
+    @NotBlank(message = "Descrição é obrigatória")
+    @Size(max = 150, message = "Descrição deve ter no máximo 150 caracteres")
     private String descricao;
 
-    @NotNull(message = "Valor e obrigatorio")
+    @NotNull(message = "Valor é obrigatório")
     @DecimalMin(value = "0.01", message = "Valor deve ser maior que zero")
     private BigDecimal valor;
 
-    @NotNull(message = "Dia de recebimento e obrigatorio")
-    @Min(value = 1, message = "Dia de recebimento deve ser no minimo 1")
-    @Max(value = 31, message = "Dia de recebimento deve ser no maximo 31")
+    @NotNull(message = "Dia de recebimento é obrigatório")
+    @Min(value = 1, message = "Dia de recebimento deve ser no mínimo 1")
+    @Max(value = 31, message = "Dia de recebimento deve ser no máximo 31")
     private Integer diaRecebimento;
 
-    @NotNull(message = "Mes e obrigatorio")
-    @Min(value = 1, message = "Mes deve ser no minimo 1")
-    @Max(value = 12, message = "Mes deve ser no maximo 12")
+    @NotNull(message = "Mês é obrigatório")
+    @Min(value = 1, message = "Mês deve ser no mínimo 1")
+    @Max(value = 12, message = "Mês deve ser no máximo 12")
     private Integer mes;
 
-    @NotNull(message = "Ano e obrigatorio")
-    @Min(value = 2000, message = "Ano deve ser no minimo 2000")
+    @NotNull(message = "Ano é obrigatório")
+    @Min(value = 2000, message = "Ano deve ser no mínimo 2000")
     private Integer ano;
 
-    @NotNull(message = "Tipo de receita e obrigatorio")
+    @NotNull(message = "Tipo de receita é obrigatório")
     private TipoReceita tipoReceita;
 
-    @NotBlank(message = "Origem e obrigatoria")
-    @Size(max = 150, message = "Origem deve ter no maximo 150 caracteres")
+    @NotBlank(message = "Origem é obrigatória")
+    @Size(max = 150, message = "Origem deve ter no máximo 150 caracteres")
     private String origem;
 
-    @NotNull(message = "Recorrente e obrigatorio")
+    @NotNull(message = "Recorrente é obrigatório")
     private Boolean recorrente;
 }

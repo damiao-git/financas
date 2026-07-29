@@ -17,22 +17,22 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class AmortizacaoRequest {
 
-    @NotNull(message = "Valor e obrigatorio")
+    @NotNull(message = "Valor é obrigatório")
     @DecimalMin(value = "0.01", message = "Valor deve ser maior que zero")
     private BigDecimal valor;
 
-    @NotNull(message = "Data da amortizacao e obrigatoria")
+    @NotNull(message = "Data da amortização é obrigatória")
     private LocalDate dataAmortizacao;
 
-    @NotNull(message = "Mes e obrigatorio")
-    @Min(value = 1, message = "Mes deve ser no minimo 1")
-    @Max(value = 12, message = "Mes deve ser no maximo 12")
+    @NotNull(message = "Mês é obrigatório")
+    @Min(value = 1, message = "Mês deve ser no mínimo 1")
+    @Max(value = 12, message = "Mês deve ser no máximo 12")
     private Integer mes;
 
-    @NotNull(message = "Ano e obrigatorio")
-    @Min(value = 2000, message = "Ano deve ser no minimo 2000")
+    @NotNull(message = "Ano é obrigatório")
+    @Min(value = 2000, message = "Ano deve ser no mínimo 2000")
     private Integer ano;
 
-    @Size(max = 255, message = "Observacao deve ter no maximo 255 caracteres")
+    @Size(max = 255, message = "Observação deve ter no máximo 255 caracteres")
     private String observacao;
 }

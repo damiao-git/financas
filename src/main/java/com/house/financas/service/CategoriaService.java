@@ -26,7 +26,7 @@ public class CategoriaService {
     @Transactional(readOnly = true)
     public Categoria buscarPorId(Long id, Usuario usuario) {
         return categoriaRepository.findByIdAndUsuarioId(id, usuario.getId())
-                .orElseThrow(() -> new ResourceNotFoundException("Categoria nao encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("Categoria não encontrada"));
     }
 
     public Categoria cadastrar(CategoriaRequest request, Usuario usuario) {

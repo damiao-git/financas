@@ -61,7 +61,7 @@ public class AuthController {
     public ResponseEntity<MessageResponse> esqueciSenha(@RequestBody @Valid ForgotPasswordRequest request) {
         passwordResetService.solicitarReset(request.getEmail());
         return ResponseEntity.ok(new MessageResponse(
-                "Se o email estiver cadastrado, enviaremos as instrucoes de recuperacao."
+                "Se o e-mail estiver cadastrado, enviaremos as instruções de recuperação."
         ));
     }
 

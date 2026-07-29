@@ -45,7 +45,7 @@ public class AmortizacaoService {
     @Transactional(readOnly = true)
     public Amortizacao buscarPorId(Long id, Usuario usuario) {
         return amortizacaoRepository.findByIdAndUsuarioId(id, usuario.getId())
-                .orElseThrow(() -> new ResourceNotFoundException("Amortizacao nao encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("Amortização não encontrada"));
     }
 
     public Amortizacao cadastrar(Long dividaId, AmortizacaoRequest request, Usuario usuario) {
@@ -73,7 +73,7 @@ public class AmortizacaoService {
         BigDecimal novoSaldo = divida.getSaldoAtual().subtract(diferenca);
 
         if (novoSaldo.signum() < 0) {
-            throw new DomainException("Valor da amortizacao nao pode ser maior que saldo atual da divida");
+            throw new DomainException("Valor da amortização não pode ser maior que saldo atual da dívida");
         }
 
         preencherAmortizacao(amortizacao, request);
@@ -99,10 +99,10 @@ public class AmortizacaoService {
 
     private Divida buscarDividaAtiva(Long dividaId, Usuario usuario) {
         Divida divida = dividaRepository.findByIdAndUsuarioId(dividaId, usuario.getId())
-                .orElseThrow(() -> new ResourceNotFoundException("Divida nao encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("Dívida não encontrada"));
 
         if (!Boolean.TRUE.equals(divida.getAtivo()) || StatusDivida.CANCELADA.equals(divida.getStatus())) {
-            throw new DomainException("Divida nao esta ativa");
+            throw new DomainException("Dívida não está ativa");
         }
 
         return divida;
@@ -132,13 +132,13 @@ public class AmortizacaoService {
 
     private void validarValorNaoUltrapassaSaldo(BigDecimal valor, BigDecimal saldoAtual) {
         if (valor.compareTo(saldoAtual) > 0) {
-            throw new DomainException("Valor da amortizacao nao pode ser maior que saldo atual da divida");
+            throw new DomainException("Valor da amortização não pode ser maior que saldo atual da dívida");
         }
     }
 
     private void validarAmortizacaoAtiva(Amortizacao amortizacao) {
         if (!Boolean.TRUE.equals(amortizacao.getAtivo())) {
-            throw new DomainException("Amortizacao ja esta inativa");
+            throw new DomainException("Amortização já está inativa");
         }
     }
 

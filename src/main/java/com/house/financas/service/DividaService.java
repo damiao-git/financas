@@ -36,7 +36,7 @@ public class DividaService {
     @Transactional(readOnly = true)
     public Divida buscarPorId(Long id, Usuario usuario) {
         return dividaRepository.findByIdAndUsuarioId(id, usuario.getId())
-                .orElseThrow(() -> new ResourceNotFoundException("Divida nao encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("Dívida não encontrada"));
     }
 
     public Divida cadastrar(DividaRequest request, Usuario usuario) {
@@ -93,11 +93,11 @@ public class DividaService {
 
     private void validarRequest(DividaRequest request) {
         if (request.getSaldoAtual().compareTo(request.getSaldoInicial()) > 0) {
-            throw new DomainException("Saldo atual nao pode ser maior que saldo inicial");
+            throw new DomainException("Saldo atual não pode ser maior que saldo inicial");
         }
 
         if (request.getParcelasPagas() > request.getQuantidadeParcelas()) {
-            throw new DomainException("Parcelas pagas nao pode ser maior que quantidade de parcelas");
+            throw new DomainException("Parcelas pagas não podem ser maiores que a quantidade de parcelas");
         }
     }
 
