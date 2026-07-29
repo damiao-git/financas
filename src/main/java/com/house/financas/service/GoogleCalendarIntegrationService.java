@@ -26,6 +26,7 @@ import java.math.BigDecimal;
 import java.net.URI;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -40,6 +41,7 @@ public class GoogleCalendarIntegrationService {
     private static final String AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
     private static final String TOKEN_URL = "https://oauth2.googleapis.com/token";
     private static final String EVENTS_URL = "https://www.googleapis.com/calendar/v3/calendars/{calendarId}/events";
+    private static final String PRIVATE_PROPERTY_CONTA_ID = "monexaContaId";
 
     private final GoogleCalendarIntegrationRepository integrationRepository;
     private final ContaMensalRepository contaMensalRepository;
@@ -181,6 +183,14 @@ public class GoogleCalendarIntegrationService {
         Map<String, Object> event = montarEvento(contaMensal);
 
         if (contaMensal.getGoogleCalendarEventId() == null || contaMensal.getGoogleCalendarEventId().isBlank()) {
+            Optional<String> eventIdExistente = buscarEventoExistente(integration, contaMensal, accessToken);
+            if (eventIdExistente.isPresent()) {
+                contaMensal.setGoogleCalendarEventId(eventIdExistente.get());
+                atualizarEvento(integration, contaMensal, accessToken, event);
+                removerEventosDuplicados(integration, contaMensal, accessToken);
+                return;
+            }
+
             GoogleEventResponse response = restClientBuilder.build()
                     .post()
                     .uri(EVENTS_URL, integration.getCalendarId())
@@ -192,10 +202,21 @@ public class GoogleCalendarIntegrationService {
 
             if (response != null && response.id() != null) {
                 contaMensal.setGoogleCalendarEventId(response.id());
+                removerEventosDuplicados(integration, contaMensal, accessToken);
             }
             return;
         }
 
+        atualizarEvento(integration, contaMensal, accessToken, event);
+        removerEventosDuplicados(integration, contaMensal, accessToken);
+    }
+
+    private void atualizarEvento(
+            GoogleCalendarIntegration integration,
+            ContaMensal contaMensal,
+            String accessToken,
+            Map<String, Object> event
+    ) {
         restClientBuilder.build()
                 .put()
                 .uri(EVENTS_URL + "/{eventId}", integration.getCalendarId(), contaMensal.getGoogleCalendarEventId())
@@ -204,6 +225,78 @@ public class GoogleCalendarIntegrationService {
                 .body(event)
                 .retrieve()
                 .toBodilessEntity();
+    }
+
+    private Optional<String> buscarEventoExistente(
+            GoogleCalendarIntegration integration,
+            ContaMensal contaMensal,
+            String accessToken
+    ) {
+        GoogleEventsResponse response = restClientBuilder.build()
+                .get()
+                .uri(uriBuilder -> uriBuilder
+                        .scheme("https")
+                        .host("www.googleapis.com")
+                        .path("/calendar/v3/calendars/{calendarId}/events")
+                        .queryParam("privateExtendedProperty", PRIVATE_PROPERTY_CONTA_ID + "=" + contaMensal.getId())
+                        .queryParam("singleEvents", true)
+                        .queryParam("showDeleted", false)
+                        .build(integration.getCalendarId()))
+                .headers(headers -> headers.setBearerAuth(accessToken))
+                .retrieve()
+                .body(GoogleEventsResponse.class);
+
+        if (response == null || response.items() == null) {
+            return Optional.empty();
+        }
+
+        List<String> ids = response.items()
+                .stream()
+                .map(GoogleEventResponse::id)
+                .filter(id -> id != null && !id.isBlank())
+                .toList();
+
+        ids.stream()
+                .skip(1)
+                .forEach(id -> removerEventoPorId(integration, accessToken, id));
+
+        return ids.stream().findFirst();
+    }
+
+    private void removerEventosDuplicados(
+            GoogleCalendarIntegration integration,
+            ContaMensal contaMensal,
+            String accessToken
+    ) {
+        GoogleEventsResponse response = restClientBuilder.build()
+                .get()
+                .uri(uriBuilder -> uriBuilder
+                        .scheme("https")
+                        .host("www.googleapis.com")
+                        .path("/calendar/v3/calendars/{calendarId}/events")
+                        .queryParam("q", "Conta da Monexa")
+                        .queryParam("singleEvents", true)
+                        .queryParam("showDeleted", false)
+                        .queryParam("timeMin", contaMensal.getDataVencimento().atStartOfDay().atOffset(ZoneOffset.UTC).toString())
+                        .queryParam("timeMax", contaMensal.getDataVencimento().plusDays(1).atStartOfDay().atOffset(ZoneOffset.UTC).toString())
+                        .build(integration.getCalendarId()))
+                .headers(headers -> headers.setBearerAuth(accessToken))
+                .retrieve()
+                .body(GoogleEventsResponse.class);
+
+        if (response == null || response.items() == null || contaMensal.getGoogleCalendarEventId() == null) {
+            return;
+        }
+
+        String summary = montarTitulo(contaMensal);
+        response.items()
+                .stream()
+                .filter(event -> event.id() != null)
+                .filter(event -> !event.id().equals(contaMensal.getGoogleCalendarEventId()))
+                .filter(event -> summary.equals(event.summary()))
+                .filter(event -> event.description() != null && event.description().startsWith("Conta da Monexa"))
+                .filter(event -> event.start() != null && contaMensal.getDataVencimento().toString().equals(event.start().date()))
+                .forEach(event -> removerEventoPorId(integration, accessToken, event.id()));
     }
 
     private void removerEvento(GoogleCalendarIntegration integration, ContaMensal contaMensal) {
@@ -227,16 +320,36 @@ public class GoogleCalendarIntegrationService {
         }
     }
 
+    private void removerEventoPorId(GoogleCalendarIntegration integration, String accessToken, String eventId) {
+        try {
+            restClientBuilder.build()
+                    .delete()
+                    .uri(EVENTS_URL + "/{eventId}", integration.getCalendarId(), eventId)
+                    .headers(headers -> headers.setBearerAuth(accessToken))
+                    .retrieve()
+                    .toBodilessEntity();
+        } catch (RestClientResponseException exception) {
+            if (exception.getStatusCode().value() != 404 && exception.getStatusCode().value() != 410) {
+                throw exception;
+            }
+        }
+    }
+
     private Map<String, Object> montarEvento(ContaMensal contaMensal) {
         LocalDate vencimento = contaMensal.getDataVencimento();
         String valor = formatarValor(contaMensal.getValorPrevisto());
         String categoria = contaMensal.getCategoria() == null ? "Sem categoria" : contaMensal.getCategoria().getNome();
 
         return Map.of(
-                "summary", "Pagar " + contaMensal.getDescricao() + " - " + valor,
+                "summary", montarTitulo(contaMensal),
                 "description", "Conta da Monexa\nCategoria: " + categoria + "\nValor previsto: " + valor,
                 "start", Map.of("date", vencimento.toString()),
                 "end", Map.of("date", vencimento.plusDays(1).toString()),
+                "extendedProperties", Map.of(
+                        "private", Map.of(
+                                PRIVATE_PROPERTY_CONTA_ID, contaMensal.getId().toString()
+                        )
+                ),
                 "reminders", Map.of(
                         "useDefault", false,
                         "overrides", List.of(
@@ -245,6 +358,10 @@ public class GoogleCalendarIntegrationService {
                         )
                 )
         );
+    }
+
+    private String montarTitulo(ContaMensal contaMensal) {
+        return "Pagar " + contaMensal.getDescricao() + " - " + formatarValor(contaMensal.getValorPrevisto());
     }
 
     private String accessTokenValido(GoogleCalendarIntegration integration) {
@@ -328,6 +445,17 @@ public class GoogleCalendarIntegrationService {
     ) {
     }
 
-    private record GoogleEventResponse(String id) {
+    private record GoogleEventResponse(
+            String id,
+            String summary,
+            String description,
+            GoogleEventDate start
+    ) {
+    }
+
+    private record GoogleEventsResponse(List<GoogleEventResponse> items) {
+    }
+
+    private record GoogleEventDate(String date) {
     }
 }
