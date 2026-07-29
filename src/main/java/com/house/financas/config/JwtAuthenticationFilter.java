@@ -1,6 +1,7 @@
 package com.house.financas.config;
 
 import com.house.financas.model.Usuario;
+import com.house.financas.model.enums.RoleUsuario;
 import com.house.financas.repository.UsuarioRepository;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
@@ -9,6 +10,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -44,7 +46,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 if (usuario != null && jwtService.tokenValido(token, usuario)) {
                     UsernamePasswordAuthenticationToken authentication =
-                            new UsernamePasswordAuthenticationToken(usuario, null, List.of());
+                            new UsernamePasswordAuthenticationToken(
+                                    usuario,
+                                    null,
+                                    List.of(new SimpleGrantedAuthority("ROLE_" + roleDoUsuario(usuario).name()))
+                            );
 
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                 }
@@ -54,5 +60,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private RoleUsuario roleDoUsuario(Usuario usuario) {
+        return usuario.getRole() == null ? RoleUsuario.USER : usuario.getRole();
     }
 }

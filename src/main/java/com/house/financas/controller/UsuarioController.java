@@ -24,7 +24,8 @@ public class UsuarioController {
 
     @GetMapping("/me")
     public ResponseEntity<UsuarioResponse> buscarPerfil(@AuthenticationPrincipal Usuario usuarioAutenticado) {
-        return ResponseEntity.ok(UsuarioResponse.from(usuarioAutenticado));
+        Usuario usuario = usuarioService.sincronizarRoleConfigurada(usuarioAutenticado);
+        return ResponseEntity.ok(UsuarioResponse.from(usuario));
     }
 
     @PutMapping("/me")

@@ -5,13 +5,19 @@ import com.house.financas.dto.UsuarioUpdateRequest;
 import com.house.financas.exception.DomainException;
 import com.house.financas.exception.ResourceNotFoundException;
 import com.house.financas.model.Usuario;
+import com.house.financas.model.enums.RoleUsuario;
 import com.house.financas.repository.UsuarioRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.UUID;
 
 @Service
@@ -20,11 +26,18 @@ public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
+    private final Set<String> adminEmails;
 
     public UsuarioService(UsuarioRepository usuarioRepository,
-                          PasswordEncoder passwordEncoder) {
+                          PasswordEncoder passwordEncoder,
+                          @Value("${monexa.admin.emails:}") String adminEmails) {
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
+        this.adminEmails = Arrays.stream(adminEmails.split(","))
+                .map(String::trim)
+                .filter(email -> !email.isBlank())
+                .map(String::toLowerCase)
+                .collect(Collectors.toSet());
     }
 
     public Usuario cadastrar(RegisterRequest request) {
@@ -43,6 +56,7 @@ public class UsuarioService {
         usuario.setEmail(emailNormalizado);
         usuario.setSenha(passwordEncoder.encode(senha));
         usuario.setAtivo(true);
+        usuario.setRole(roleParaEmail(emailNormalizado));
 
         return usuarioRepository.save(usuario);
     }
@@ -58,6 +72,7 @@ public class UsuarioService {
                     if (usuario.getNome() == null || usuario.getNome().isBlank()) {
                         usuario.setNome(nome.trim());
                     }
+                    garantirAdminConfigurado(usuario);
                     return usuarioRepository.save(usuario);
                 })
                 .orElseGet(() -> {
@@ -66,6 +81,7 @@ public class UsuarioService {
                     usuario.setEmail(emailNormalizado);
                     usuario.setSenha(passwordEncoder.encode(UUID.randomUUID().toString()));
                     usuario.setAtivo(true);
+                    usuario.setRole(roleParaEmail(emailNormalizado));
                     return usuarioRepository.save(usuario);
                 });
     }
@@ -89,6 +105,8 @@ public class UsuarioService {
             throw new BadCredentialsException("Usuario inativo");
         }
 
+        garantirAdminConfigurado(usuario);
+
         if (!passwordEncoder.matches(senha, usuario.getSenha())) {
             throw new BadCredentialsException("Email ou senha invalidos");
         }
@@ -97,9 +115,19 @@ public class UsuarioService {
     }
 
     @Transactional(readOnly = true)
+    public List<Usuario> listarTodos() {
+        return usuarioRepository.findAllByOrderByDataCriacaoDesc();
+    }
+
+    @Transactional(readOnly = true)
     public Usuario buscarPorId(Long id) {
         return usuarioRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario nao encontrado"));
+    }
+
+    public Usuario sincronizarRoleConfigurada(Usuario usuario) {
+        garantirAdminConfigurado(usuario);
+        return buscarPorId(usuario.getId());
     }
 
     public Usuario atualizar(Long id, UsuarioUpdateRequest request) {
@@ -141,8 +169,49 @@ public class UsuarioService {
         usuarioRepository.save(usuario);
     }
 
+    public Usuario ativar(Long id) {
+        Usuario usuario = buscarPorId(id);
+        usuario.setAtivo(true);
+        return usuarioRepository.save(usuario);
+    }
+
+    public Usuario desativar(Long id, Usuario adminAutenticado) {
+        validarNaoEhProprioUsuario(id, adminAutenticado);
+
+        Usuario usuario = buscarPorId(id);
+        usuario.setAtivo(false);
+        return usuarioRepository.save(usuario);
+    }
+
+    public Usuario alterarRole(Long id, RoleUsuario role, Usuario adminAutenticado) {
+        validarNaoEhProprioUsuario(id, adminAutenticado);
+
+        Usuario usuario = buscarPorId(id);
+        usuario.setRole(role);
+        return usuarioRepository.save(usuario);
+    }
+
     private String normalizarEmail(String email) {
         return email.trim().toLowerCase();
+    }
+
+    private RoleUsuario roleParaEmail(String email) {
+        return adminEmails.contains(email) ? RoleUsuario.ADMIN : RoleUsuario.USER;
+    }
+
+    private void garantirAdminConfigurado(Usuario usuario) {
+        RoleUsuario roleEsperada = roleParaEmail(usuario.getEmail());
+
+        if (usuario.getRole() == null || (roleEsperada == RoleUsuario.ADMIN && usuario.getRole() != RoleUsuario.ADMIN)) {
+            usuario.setRole(roleEsperada);
+            usuarioRepository.save(usuario);
+        }
+    }
+
+    private void validarNaoEhProprioUsuario(Long id, Usuario adminAutenticado) {
+        if (adminAutenticado != null && id.equals(adminAutenticado.getId())) {
+            throw new DomainException("Nao e permitido alterar seu proprio acesso administrativo");
+        }
     }
 }
 

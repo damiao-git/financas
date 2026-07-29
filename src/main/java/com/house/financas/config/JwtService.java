@@ -1,6 +1,7 @@
 package com.house.financas.config;
 
 import com.house.financas.model.Usuario;
+import com.house.financas.model.enums.RoleUsuario;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -26,6 +27,7 @@ public class JwtService {
                 .setSubject(usuario.getEmail())
                 .claim("id", usuario.getId())
                 .claim("nome", usuario.getNome())
+                .claim("role", roleDoUsuario(usuario).name())
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(getSignKey(), SignatureAlgorithm.HS256)
@@ -56,5 +58,9 @@ public class JwtService {
     private Key getSignKey() {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         return Keys.hmacShaKeyFor(keyBytes);
+    }
+
+    private RoleUsuario roleDoUsuario(Usuario usuario) {
+        return usuario.getRole() == null ? RoleUsuario.USER : usuario.getRole();
     }
 }

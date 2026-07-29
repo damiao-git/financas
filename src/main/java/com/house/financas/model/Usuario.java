@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import com.house.financas.model.enums.RoleUsuario;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -29,6 +31,10 @@ public class Usuario {
 
     @Column(nullable = false)
     private Boolean ativo = true;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private RoleUsuario role = RoleUsuario.USER;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime dataCriacao;
