@@ -24,6 +24,7 @@ public class ContaMensalService {
     private final ContaMensalRepository contaMensalRepository;
     private final CategoriaRepository categoriaRepository;
     private final DespesaRepository despesaRepository;
+    private final GoogleCalendarIntegrationService googleCalendarIntegrationService;
 
     @Transactional(readOnly = true)
     public List<ContaMensal> listar(Usuario usuario, Integer ano, Integer mes) {
@@ -51,14 +52,20 @@ public class ContaMensalService {
         contaMensal.setStatus(StatusContaMensal.PENDENTE);
         contaMensal.setAtivo(true);
 
-        return contaMensalRepository.save(contaMensal);
+        ContaMensal contaSalva = contaMensalRepository.save(contaMensal);
+        googleCalendarIntegrationService.sincronizarConta(contaSalva);
+
+        return contaSalva;
     }
 
     public ContaMensal atualizar(Long id, ContaMensalRequest request, Usuario usuario) {
         ContaMensal contaMensal = buscarPorId(id, usuario);
         preencherContaMensal(contaMensal, request, usuario);
 
-        return contaMensalRepository.save(contaMensal);
+        ContaMensal contaSalva = contaMensalRepository.save(contaMensal);
+        googleCalendarIntegrationService.sincronizarConta(contaSalva);
+
+        return contaSalva;
     }
 
     public void cancelar(Long id, Usuario usuario) {
@@ -66,16 +73,19 @@ public class ContaMensalService {
         contaMensal.setStatus(StatusContaMensal.CANCELADA);
         contaMensal.setAtivo(false);
         contaMensalRepository.save(contaMensal);
+        googleCalendarIntegrationService.sincronizarConta(contaMensal);
     }
 
     public void marcarComoPaga(ContaMensal contaMensal) {
         contaMensal.setStatus(StatusContaMensal.PAGA);
         contaMensalRepository.save(contaMensal);
+        googleCalendarIntegrationService.sincronizarConta(contaMensal);
     }
 
     public void marcarComoPendente(ContaMensal contaMensal) {
         contaMensal.setStatus(StatusContaMensal.PENDENTE);
         contaMensalRepository.save(contaMensal);
+        googleCalendarIntegrationService.sincronizarConta(contaMensal);
     }
 
     private void preencherContaMensal(ContaMensal contaMensal, ContaMensalRequest request, Usuario usuario) {

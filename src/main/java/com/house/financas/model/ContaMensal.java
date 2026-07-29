@@ -55,6 +55,9 @@ public class ContaMensal {
     @Column(length = 255)
     private String observacao;
 
+    @Column(length = 255)
+    private String googleCalendarEventId;
+
     @Column(nullable = false)
     private Boolean ativo = true;
 

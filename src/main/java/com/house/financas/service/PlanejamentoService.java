@@ -29,6 +29,7 @@ public class PlanejamentoService {
     private final DespesaRepository despesaRepository;
     private final DividaRepository dividaRepository;
     private final ContaMensalRepository contaMensalRepository;
+    private final GoogleCalendarIntegrationService googleCalendarIntegrationService;
 
     public GeracaoRecorrenciasResponse gerarRecorrencias(
             Usuario usuario,
@@ -127,7 +128,8 @@ public class PlanejamentoService {
                 conta.setCategoria(despesa.getCategoria());
                 conta.setDespesa(despesa);
                 conta.setUsuario(usuario);
-                contaMensalRepository.save(conta);
+                ContaMensal contaSalva = contaMensalRepository.save(conta);
+                googleCalendarIntegrationService.sincronizarConta(contaSalva);
                 geradas++;
             }
         }
@@ -171,7 +173,8 @@ public class PlanejamentoService {
                 conta.setAtivo(true);
                 conta.setDivida(divida);
                 conta.setUsuario(usuario);
-                contaMensalRepository.save(conta);
+                ContaMensal contaSalva = contaMensalRepository.save(conta);
+                googleCalendarIntegrationService.sincronizarConta(contaSalva);
                 geradas++;
             }
         }

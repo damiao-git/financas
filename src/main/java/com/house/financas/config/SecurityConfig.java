@@ -43,6 +43,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(
                                 "/auth/**",
+                                "/integracoes/google-calendar/callback",
                                 "/health",
                                 "/v3/api-docs/**",
                                 "/error",
