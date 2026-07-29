@@ -96,29 +96,34 @@ public class GoogleCalendarIntegrationService {
     }
 
     public URI concluirAutorizacao(String code, String state) {
-        validarConfiguracao();
+        try {
+            validarConfiguracao();
 
-        if (code == null || code.isBlank() || state == null || state.isBlank()) {
+            if (code == null || code.isBlank() || state == null || state.isBlank()) {
+                return redirect("googleCalendar=erro");
+            }
+
+            GoogleCalendarIntegration integration = integrationRepository.findByAuthState(state)
+                    .orElseThrow(() -> new DomainException("Autorização do Google Agenda inválida"));
+
+            GoogleTokenResponse token = trocarCodigoPorToken(code);
+            integration.setAccessToken(token.accessToken());
+            if (token.refreshToken() != null && !token.refreshToken().isBlank()) {
+                integration.setRefreshToken(token.refreshToken());
+            }
+            integration.setAccessTokenExpiraEm(LocalDateTime.now().plusSeconds(token.expiresIn()));
+            integration.setConectado(true);
+            integration.setCalendarId("primary");
+            integration.setConectadoEm(LocalDateTime.now());
+            integration.setAuthState(null);
+            integrationRepository.save(integration);
+            sincronizarContasPendentes(integration.getUsuario());
+
+            return redirect("googleCalendar=conectado");
+        } catch (Exception exception) {
+            LOGGER.warn("Não foi possível concluir autorização do Google Agenda", exception);
             return redirect("googleCalendar=erro");
         }
-
-        GoogleCalendarIntegration integration = integrationRepository.findByAuthState(state)
-                .orElseThrow(() -> new DomainException("Autorização do Google Agenda inválida"));
-
-        GoogleTokenResponse token = trocarCodigoPorToken(code);
-        integration.setAccessToken(token.accessToken());
-        if (token.refreshToken() != null && !token.refreshToken().isBlank()) {
-            integration.setRefreshToken(token.refreshToken());
-        }
-        integration.setAccessTokenExpiraEm(LocalDateTime.now().plusSeconds(token.expiresIn()));
-        integration.setConectado(true);
-        integration.setCalendarId("primary");
-        integration.setConectadoEm(LocalDateTime.now());
-        integration.setAuthState(null);
-        integrationRepository.save(integration);
-        sincronizarContasPendentes(integration.getUsuario());
-
-        return redirect("googleCalendar=conectado");
     }
 
     public void desconectar(Usuario usuario) {
