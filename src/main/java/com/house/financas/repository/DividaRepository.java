@@ -11,6 +11,8 @@ public interface DividaRepository extends JpaRepository<Divida, Long> {
 
     List<Divida> findByUsuarioIdAndAtivoTrueOrderByStatusAscDescricaoAsc(Long usuarioId);
 
+    boolean existsByUsuarioIdAndAtivoTrue(Long usuarioId);
+
     List<Divida> findByUsuarioIdAndStatusAndAtivoTrueOrderByDescricaoAsc(Long usuarioId, StatusDivida status);
 
     Optional<Divida> findByIdAndUsuarioId(Long id, Long usuarioId);

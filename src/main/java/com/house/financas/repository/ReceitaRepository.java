@@ -16,6 +16,8 @@ public interface ReceitaRepository extends JpaRepository<Receita, Long> {
 
     List<Receita> findByUsuarioIdAndRecorrenteTrueAndAtivoTrue(Long usuarioId);
 
+    boolean existsByUsuarioIdAndAtivoTrue(Long usuarioId);
+
     List<Receita> findByUsuarioIdAndAnoAndMesAndAtivoTrueOrderByDiaRecebimentoAsc(
             Long usuarioId,
             Integer ano,

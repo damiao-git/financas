@@ -36,6 +36,11 @@ public class Usuario {
     @Column(nullable = false, length = 20)
     private RoleUsuario role = RoleUsuario.USER;
 
+    @Column(nullable = false)
+    private Boolean onboardingConcluido = false;
+
+    private LocalDateTime dataOnboardingConcluido;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime dataCriacao;
 

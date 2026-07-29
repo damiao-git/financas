@@ -14,6 +14,8 @@ public interface ContaMensalRepository extends JpaRepository<ContaMensal, Long> 
 
     List<ContaMensal> findByUsuarioIdAndAtivoTrueOrderByDataVencimentoAsc(Long usuarioId);
 
+    boolean existsByUsuarioIdAndAtivoTrue(Long usuarioId);
+
     List<ContaMensal> findByUsuarioIdAndAnoAndMesAndAtivoTrueOrderByDataVencimentoAsc(
             Long usuarioId,
             Integer ano,

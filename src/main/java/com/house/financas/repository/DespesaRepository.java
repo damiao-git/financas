@@ -11,6 +11,8 @@ public interface DespesaRepository extends JpaRepository<Despesa, Long> {
 
     List<Despesa> findByUsuarioIdAndAtivoTrueOrderByDiaVencimentoAsc(Long usuarioId);
 
+    boolean existsByUsuarioIdAndAtivoTrue(Long usuarioId);
+
     List<Despesa> findByUsuarioIdAndRecorrenteTrueAndAtivoTrue(Long usuarioId);
 
     Optional<Despesa> findByIdAndUsuarioId(Long id, Long usuarioId);

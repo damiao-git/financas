@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
 import java.util.List;
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -69,6 +70,9 @@ public class UsuarioService {
                     if (!Boolean.TRUE.equals(usuario.getAtivo())) {
                         usuario.setAtivo(true);
                     }
+                    if (usuario.getOnboardingConcluido() == null) {
+                        usuario.setOnboardingConcluido(false);
+                    }
                     if (usuario.getNome() == null || usuario.getNome().isBlank()) {
                         usuario.setNome(nome.trim());
                     }
@@ -82,6 +86,7 @@ public class UsuarioService {
                     usuario.setSenha(passwordEncoder.encode(UUID.randomUUID().toString()));
                     usuario.setAtivo(true);
                     usuario.setRole(roleParaEmail(emailNormalizado));
+                    usuario.setOnboardingConcluido(false);
                     return usuarioRepository.save(usuario);
                 });
     }
@@ -128,6 +133,13 @@ public class UsuarioService {
     public Usuario sincronizarRoleConfigurada(Usuario usuario) {
         garantirAdminConfigurado(usuario);
         return buscarPorId(usuario.getId());
+    }
+
+    public Usuario concluirOnboarding(Usuario usuarioAutenticado) {
+        Usuario usuario = buscarPorId(usuarioAutenticado.getId());
+        usuario.setOnboardingConcluido(true);
+        usuario.setDataOnboardingConcluido(LocalDateTime.now());
+        return usuarioRepository.save(usuario);
     }
 
     public Usuario atualizar(Long id, UsuarioUpdateRequest request) {
