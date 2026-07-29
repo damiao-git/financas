@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 public record GoogleCalendarStatusResponse(
         boolean conectado,
         String calendarId,
-        LocalDateTime conectadoEm
+        LocalDateTime conectadoEm,
+        String googleAccountEmail
 ) {
 }

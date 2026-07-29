@@ -39,6 +39,7 @@ public class GoogleCalendarIntegrationService {
     private static final Logger LOGGER = LoggerFactory.getLogger(GoogleCalendarIntegrationService.class);
     private static final String AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
     private static final String TOKEN_URL = "https://oauth2.googleapis.com/token";
+    private static final String USER_INFO_URL = "https://www.googleapis.com/oauth2/v2/userinfo";
     private static final String EVENTS_URL = "https://www.googleapis.com/calendar/v3/calendars/{calendarId}/events";
     private static final String PRIVATE_PROPERTY_CONTA_ID = "monexaContaId";
 
@@ -64,9 +65,10 @@ public class GoogleCalendarIntegrationService {
                 .map(integration -> new GoogleCalendarStatusResponse(
                         true,
                         integration.getCalendarId(),
-                        integration.getConectadoEm()
+                        integration.getConectadoEm(),
+                        integration.getGoogleAccountEmail()
                 ))
-                .orElse(new GoogleCalendarStatusResponse(false, "primary", null));
+                .orElse(new GoogleCalendarStatusResponse(false, "primary", null, null));
     }
 
     public GoogleCalendarAuthUrlResponse iniciarAutorizacao(Usuario usuario) {
@@ -84,7 +86,7 @@ public class GoogleCalendarIntegrationService {
                 .queryParam("client_id", clientId)
                 .queryParam("redirect_uri", redirectUri)
                 .queryParam("response_type", "code")
-                .queryParam("scope", "https://www.googleapis.com/auth/calendar.events")
+                .queryParam("scope", "https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/userinfo.email")
                 .queryParam("access_type", "offline")
                 .queryParam("prompt", "consent")
                 .queryParam("state", state)
@@ -106,6 +108,22 @@ public class GoogleCalendarIntegrationService {
                     .orElseThrow(() -> new DomainException("Autorização do Google Agenda inválida"));
 
             GoogleTokenResponse token = trocarCodigoPorToken(code);
+            String googleAccountEmail = buscarGoogleAccountEmail(token.accessToken());
+            if (googleAccountEmail == null || googleAccountEmail.isBlank()) {
+                throw new DomainException("Não foi possível identificar a conta Google autorizada");
+            }
+
+            boolean googleAccountEmUso = integrationRepository
+                    .findAllByGoogleAccountEmailIgnoreCaseAndConectadoTrue(googleAccountEmail)
+                    .stream()
+                    .anyMatch(existente -> !existente.getUsuario().getId().equals(integration.getUsuario().getId()));
+
+            if (googleAccountEmUso) {
+                integration.setAuthState(null);
+                integrationRepository.save(integration);
+                return redirect("googleCalendar=emUso");
+            }
+
             integration.setAccessToken(token.accessToken());
             if (token.refreshToken() != null && !token.refreshToken().isBlank()) {
                 integration.setRefreshToken(token.refreshToken());
@@ -113,6 +131,7 @@ public class GoogleCalendarIntegrationService {
             integration.setAccessTokenExpiraEm(LocalDateTime.now().plusSeconds(token.expiresIn()));
             integration.setConectado(true);
             integration.setCalendarId("primary");
+            integration.setGoogleAccountEmail(googleAccountEmail);
             integration.setConectadoEm(LocalDateTime.now());
             integration.setAuthState(null);
             integrationRepository.save(integration);
@@ -133,6 +152,7 @@ public class GoogleCalendarIntegrationService {
             integration.setRefreshToken(null);
             integration.setAccessTokenExpiraEm(null);
             integration.setAuthState(null);
+            integration.setGoogleAccountEmail(null);
             integrationRepository.save(integration);
         });
     }
@@ -443,6 +463,26 @@ public class GoogleCalendarIntegrationService {
         return solicitarToken(body);
     }
 
+    private String buscarGoogleAccountEmail(String accessToken) {
+        try {
+            GoogleUserInfoResponse userInfo = restClientBuilder.build()
+                    .get()
+                    .uri(USER_INFO_URL)
+                    .headers(headers -> headers.setBearerAuth(accessToken))
+                    .retrieve()
+                    .body(GoogleUserInfoResponse.class);
+
+            if (userInfo == null || userInfo.email() == null || userInfo.email().isBlank()) {
+                throw new DomainException("Não foi possível identificar a conta Google autorizada");
+            }
+
+            return userInfo.email().trim().toLowerCase();
+        } catch (RestClientResponseException exception) {
+            LOGGER.warn("Google retornou erro ao buscar dados da conta autorizada: {}", exception.getResponseBodyAsString());
+            throw new DomainException("Não foi possível identificar a conta Google autorizada");
+        }
+    }
+
     private GoogleTokenResponse atualizarAccessToken(String refreshToken) {
         MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
         body.add("client_id", clientId);
@@ -493,6 +533,9 @@ public class GoogleCalendarIntegrationService {
             @com.fasterxml.jackson.annotation.JsonProperty("refresh_token") String refreshToken,
             @com.fasterxml.jackson.annotation.JsonProperty("expires_in") Long expiresIn
     ) {
+    }
+
+    private record GoogleUserInfoResponse(String email) {
     }
 
     private record GoogleEventResponse(

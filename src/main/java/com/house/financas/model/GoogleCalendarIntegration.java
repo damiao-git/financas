@@ -49,6 +49,9 @@ public class GoogleCalendarIntegration {
     @Column(nullable = false, length = 120)
     private String calendarId = "primary";
 
+    @Column(length = 180)
+    private String googleAccountEmail;
+
     private LocalDateTime conectadoEm;
 
     @Column(nullable = false, updatable = false)
