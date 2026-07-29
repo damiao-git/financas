@@ -26,7 +26,6 @@ import java.math.BigDecimal;
 import java.net.URI;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -117,6 +116,7 @@ public class GoogleCalendarIntegrationService {
             integration.setConectadoEm(LocalDateTime.now());
             integration.setAuthState(null);
             integrationRepository.save(integration);
+            limparVinculosGoogleCalendar(integration.getUsuario());
             sincronizarContasPendentes(integration.getUsuario());
 
             return redirect("googleCalendar=conectado");
@@ -161,6 +161,11 @@ public class GoogleCalendarIntegrationService {
                 .filter(conta -> StatusContaMensal.PENDENTE.equals(conta.getStatus()))
                 .filter(conta -> !conta.getDataVencimento().isBefore(LocalDate.now()))
                 .forEach(this::sincronizarConta);
+    }
+
+    private void limparVinculosGoogleCalendar(Usuario usuario) {
+        contaMensalRepository.findByUsuarioIdAndAtivoTrueOrderByDataVencimentoAsc(usuario.getId())
+                .forEach(conta -> conta.setGoogleCalendarEventId(null));
     }
 
     private GoogleCalendarIntegration novaIntegracao(Usuario usuario) {
@@ -222,14 +227,29 @@ public class GoogleCalendarIntegrationService {
             String accessToken,
             Map<String, Object> event
     ) {
-        restClientBuilder.build()
-                .put()
-                .uri(EVENTS_URL + "/{eventId}", integration.getCalendarId(), contaMensal.getGoogleCalendarEventId())
-                .headers(headers -> headers.setBearerAuth(accessToken))
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(event)
-                .retrieve()
-                .toBodilessEntity();
+        try {
+            restClientBuilder.build()
+                    .put()
+                    .uri(EVENTS_URL + "/{eventId}", integration.getCalendarId(), contaMensal.getGoogleCalendarEventId())
+                    .headers(headers -> headers.setBearerAuth(accessToken))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(event)
+                    .retrieve()
+                    .toBodilessEntity();
+        } catch (RestClientResponseException exception) {
+            if (eventoInexistenteOuInacessivel(exception)) {
+                LOGGER.warn(
+                        "Evento {} da conta {} não existe no Google Agenda conectado. Um novo evento será criado.",
+                        contaMensal.getGoogleCalendarEventId(),
+                        contaMensal.getId()
+                );
+                contaMensal.setGoogleCalendarEventId(null);
+                salvarEvento(integration, contaMensal);
+                return;
+            }
+
+            throw exception;
+        }
     }
 
     private Optional<String> buscarEventoExistente(
@@ -237,19 +257,29 @@ public class GoogleCalendarIntegrationService {
             ContaMensal contaMensal,
             String accessToken
     ) {
-        GoogleEventsResponse response = restClientBuilder.build()
-                .get()
-                .uri(uriBuilder -> uriBuilder
-                        .scheme("https")
-                        .host("www.googleapis.com")
-                        .path("/calendar/v3/calendars/{calendarId}/events")
-                        .queryParam("privateExtendedProperty", PRIVATE_PROPERTY_CONTA_ID + "=" + contaMensal.getId())
-                        .queryParam("singleEvents", true)
-                        .queryParam("showDeleted", false)
-                        .build(integration.getCalendarId()))
-                .headers(headers -> headers.setBearerAuth(accessToken))
-                .retrieve()
-                .body(GoogleEventsResponse.class);
+        GoogleEventsResponse response;
+        try {
+            response = restClientBuilder.build()
+                    .get()
+                    .uri(uriBuilder -> uriBuilder
+                            .scheme("https")
+                            .host("www.googleapis.com")
+                            .path("/calendar/v3/calendars/{calendarId}/events")
+                            .queryParam("privateExtendedProperty", PRIVATE_PROPERTY_CONTA_ID + "=" + contaMensal.getId())
+                            .queryParam("singleEvents", true)
+                            .queryParam("showDeleted", false)
+                            .build(integration.getCalendarId()))
+                    .headers(headers -> headers.setBearerAuth(accessToken))
+                    .retrieve()
+                    .body(GoogleEventsResponse.class);
+        } catch (RestClientResponseException exception) {
+            LOGGER.warn(
+                    "Não foi possível buscar evento existente da conta {} no Google Agenda: {}",
+                    contaMensal.getId(),
+                    exception.getResponseBodyAsString()
+            );
+            return Optional.empty();
+        }
 
         if (response == null || response.items() == null) {
             return Optional.empty();
@@ -273,21 +303,31 @@ public class GoogleCalendarIntegrationService {
             ContaMensal contaMensal,
             String accessToken
     ) {
-        GoogleEventsResponse response = restClientBuilder.build()
-                .get()
-                .uri(uriBuilder -> uriBuilder
-                        .scheme("https")
-                        .host("www.googleapis.com")
-                        .path("/calendar/v3/calendars/{calendarId}/events")
-                        .queryParam("q", "Conta da Monexa")
-                        .queryParam("singleEvents", true)
-                        .queryParam("showDeleted", false)
-                        .queryParam("timeMin", contaMensal.getDataVencimento().atStartOfDay().atOffset(ZoneOffset.UTC).toString())
-                        .queryParam("timeMax", contaMensal.getDataVencimento().plusDays(1).atStartOfDay().atOffset(ZoneOffset.UTC).toString())
-                        .build(integration.getCalendarId()))
-                .headers(headers -> headers.setBearerAuth(accessToken))
-                .retrieve()
-                .body(GoogleEventsResponse.class);
+        GoogleEventsResponse response;
+        try {
+            response = restClientBuilder.build()
+                    .get()
+                    .uri(uriBuilder -> uriBuilder
+                            .scheme("https")
+                            .host("www.googleapis.com")
+                            .path("/calendar/v3/calendars/{calendarId}/events")
+                            .queryParam("q", "Conta da Monexa")
+                            .queryParam("singleEvents", true)
+                            .queryParam("showDeleted", false)
+                            .queryParam("timeMin", contaMensal.getDataVencimento().atStartOfDay().toString() + ":00-03:00")
+                            .queryParam("timeMax", contaMensal.getDataVencimento().plusDays(1).atStartOfDay().toString() + ":00-03:00")
+                            .build(integration.getCalendarId()))
+                    .headers(headers -> headers.setBearerAuth(accessToken))
+                    .retrieve()
+                    .body(GoogleEventsResponse.class);
+        } catch (RestClientResponseException exception) {
+            LOGGER.warn(
+                    "Não foi possível limpar duplicados da conta {} no Google Agenda: {}",
+                    contaMensal.getId(),
+                    exception.getResponseBodyAsString()
+            );
+            return;
+        }
 
         if (response == null || response.items() == null || contaMensal.getGoogleCalendarEventId() == null) {
             return;
@@ -335,9 +375,14 @@ public class GoogleCalendarIntegrationService {
                     .toBodilessEntity();
         } catch (RestClientResponseException exception) {
             if (exception.getStatusCode().value() != 404 && exception.getStatusCode().value() != 410) {
-                throw exception;
+                LOGGER.warn("Não foi possível remover evento duplicado {} do Google Agenda", eventId, exception);
             }
         }
+    }
+
+    private boolean eventoInexistenteOuInacessivel(RestClientResponseException exception) {
+        int statusCode = exception.getStatusCode().value();
+        return statusCode == 400 || statusCode == 404 || statusCode == 410;
     }
 
     private Map<String, Object> montarEvento(ContaMensal contaMensal) {
