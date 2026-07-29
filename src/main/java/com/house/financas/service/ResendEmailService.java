@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestClient;
 
 import java.util.List;
@@ -51,7 +52,15 @@ public class ResendEmailService implements EmailService {
                     ))
                     .retrieve()
                     .toBodilessEntity();
+        } catch (RestClientResponseException exception) {
+            LOGGER.error(
+                    "Erro ao enviar email pelo Resend. Status: {}. Resposta: {}",
+                    exception.getStatusCode(),
+                    exception.getResponseBodyAsString()
+            );
+            throw new DomainException("Nao foi possivel enviar o email de recuperacao");
         } catch (Exception exception) {
+            LOGGER.error("Erro inesperado ao enviar email pelo Resend", exception);
             throw new DomainException("Nao foi possivel enviar o email de recuperacao");
         }
     }
