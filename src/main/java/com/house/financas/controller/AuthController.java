@@ -1,13 +1,17 @@
 package com.house.financas.controller;
 
 import com.house.financas.config.JwtService;
+import com.house.financas.dto.ForgotPasswordRequest;
 import com.house.financas.dto.GoogleLoginRequest;
 import com.house.financas.dto.LoginRequest;
 import com.house.financas.dto.LoginResponse;
+import com.house.financas.dto.MessageResponse;
 import com.house.financas.dto.RegisterRequest;
+import com.house.financas.dto.ResetPasswordRequest;
 import com.house.financas.dto.UsuarioResponse;
 import com.house.financas.model.Usuario;
 import com.house.financas.service.GoogleAuthService;
+import com.house.financas.service.PasswordResetService;
 import com.house.financas.service.UsuarioService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +29,7 @@ public class AuthController {
 
     private final UsuarioService usuarioService;
     private final GoogleAuthService googleAuthService;
+    private final PasswordResetService passwordResetService;
     private final JwtService jwtService;
 
     @PostMapping("/register")
@@ -50,6 +55,20 @@ public class AuthController {
         Usuario usuario = usuarioService.autenticarGoogle(googleUser.nome(), googleUser.email());
         String token = jwtService.gerarToken(usuario);
         return ResponseEntity.ok(new LoginResponse(token));
+    }
+
+    @PostMapping("/esqueci-senha")
+    public ResponseEntity<MessageResponse> esqueciSenha(@RequestBody @Valid ForgotPasswordRequest request) {
+        passwordResetService.solicitarReset(request.getEmail());
+        return ResponseEntity.ok(new MessageResponse(
+                "Se o email estiver cadastrado, enviaremos as instrucoes de recuperacao."
+        ));
+    }
+
+    @PostMapping("/resetar-senha")
+    public ResponseEntity<MessageResponse> resetarSenha(@RequestBody @Valid ResetPasswordRequest request) {
+        passwordResetService.resetarSenha(request.getToken(), request.getNovaSenha());
+        return ResponseEntity.ok(new MessageResponse("Senha redefinida com sucesso."));
     }
 }
 

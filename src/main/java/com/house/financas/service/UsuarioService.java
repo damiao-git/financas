@@ -11,6 +11,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -70,6 +71,14 @@ public class UsuarioService {
     }
 
     @Transactional(readOnly = true)
+    public Optional<Usuario> buscarAtivoPorEmail(String email) {
+        String emailNormalizado = normalizarEmail(email);
+
+        return usuarioRepository.findByEmail(emailNormalizado)
+                .filter(usuario -> Boolean.TRUE.equals(usuario.getAtivo()));
+    }
+
+    @Transactional(readOnly = true)
     public Usuario autenticar(String email, String senha) {
         String emailNormalizado = normalizarEmail(email);
 
@@ -119,6 +128,11 @@ public class UsuarioService {
         }
 
         return usuarioRepository.save(usuario);
+    }
+
+    public void alterarSenha(Usuario usuario, String novaSenha) {
+        usuario.setSenha(passwordEncoder.encode(novaSenha));
+        usuarioRepository.save(usuario);
     }
 
     public void deletar(Long id) {
