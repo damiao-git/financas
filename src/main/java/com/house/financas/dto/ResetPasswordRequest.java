@@ -15,6 +15,6 @@ public class ResetPasswordRequest {
     private String token;
 
     @NotBlank(message = "Senha é obrigatória")
-    @Size(min = 6, message = "Senha deve ter no mínimo 6 caracteres")
+    @Size(min = 8, max = 100, message = "Senha deve ter entre 8 e 100 caracteres")
     private String novaSenha;
 }

@@ -2,6 +2,7 @@ package com.house.financas;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.house.financas.repository.UsuarioRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -34,6 +35,9 @@ class MonexaCrudIntegrationTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private UsuarioRepository usuarioRepository;
 
     @Test
     void deveExecutarCrudCompletoDoMvpComJwt() throws Exception {
@@ -194,13 +198,47 @@ class MonexaCrudIntegrationTest {
         mockMvc.perform(delete("/usuarios/me").headers(auth(token))).andExpect(status().isNoContent());
     }
 
+    @Test
+    void deveRegistrarTentativasFalhasEBloquearLoginTemporariamente() throws Exception {
+        mockMvc.perform(post("/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json(Map.of(
+                                "nome", "Usuario Bloqueio",
+                                "email", "bloqueio@monexa.com",
+                                "senha", "Senha123"
+                        ))))
+                .andExpect(status().isCreated());
+
+        for (int tentativa = 0; tentativa < 5; tentativa++) {
+            mockMvc.perform(post("/auth/login")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(json(Map.of(
+                                    "email", "bloqueio@monexa.com",
+                                    "senha", "SenhaErrada123"
+                            ))))
+                    .andExpect(status().isUnauthorized());
+        }
+
+        var usuario = usuarioRepository.findByEmail("bloqueio@monexa.com").orElseThrow();
+        assertThat(usuario.getTentativasLoginFalhas()).isEqualTo(5);
+        assertThat(usuario.getBloqueadoAte()).isNotNull();
+
+        mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json(Map.of(
+                                "email", "bloqueio@monexa.com",
+                                "senha", "Senha123"
+                        ))))
+                .andExpect(status().isUnauthorized());
+    }
+
     private String registrarEObterToken() throws Exception {
         mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json(Map.of(
                                 "nome", "Usuario MVP",
                                 "email", "mvp@monexa.com",
-                                "senha", "123456"
+                                "senha", "Senha123"
                         ))))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.email").value("mvp@monexa.com"));
@@ -209,7 +247,7 @@ class MonexaCrudIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json(Map.of(
                                 "email", "mvp@monexa.com",
-                                "senha", "123456"
+                                "senha", "Senha123"
                         ))))
                 .andExpect(status().isOk())
                 .andReturn();

@@ -41,6 +41,12 @@ public class Usuario {
 
     private LocalDateTime dataOnboardingConcluido;
 
+    private Integer tentativasLoginFalhas = 0;
+
+    private LocalDateTime bloqueadoAte;
+
+    private LocalDateTime ultimoLoginEm;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime dataCriacao;
 

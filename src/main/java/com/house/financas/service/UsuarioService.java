@@ -25,6 +25,12 @@ import java.util.UUID;
 @Transactional
 public class UsuarioService {
 
+    private static final int MAX_TENTATIVAS_LOGIN = 5;
+    private static final int MINUTOS_BLOQUEIO_LOGIN = 15;
+    private static final String MENSAGEM_CREDENCIAIS_INVALIDAS = "E-mail ou senha inválidos";
+    private static final String MENSAGEM_LOGIN_BLOQUEADO = "Muitas tentativas de login. Tente novamente em alguns minutos.";
+    private static final String MENSAGEM_SENHA_FRACA = "A senha deve ter pelo menos 8 caracteres, com letras e números.";
+
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
     private final Set<String> adminEmails;
@@ -47,6 +53,7 @@ public class UsuarioService {
 
     public Usuario cadastrar(String nome, String email, String senha) {
         String emailNormalizado = normalizarEmail(email);
+        validarSenhaForte(senha);
 
         if (usuarioRepository.existsByEmail(emailNormalizado)) {
             throw new DomainException("E-mail já cadastrado");
@@ -58,6 +65,7 @@ public class UsuarioService {
         usuario.setSenha(passwordEncoder.encode(senha));
         usuario.setAtivo(true);
         usuario.setRole(roleParaEmail(emailNormalizado));
+        usuario.setTentativasLoginFalhas(0);
 
         return usuarioRepository.save(usuario);
     }
@@ -99,24 +107,26 @@ public class UsuarioService {
                 .filter(usuario -> Boolean.TRUE.equals(usuario.getAtivo()));
     }
 
-    @Transactional(readOnly = true)
+    @Transactional(noRollbackFor = BadCredentialsException.class)
     public Usuario autenticar(String email, String senha) {
         String emailNormalizado = normalizarEmail(email);
 
         Usuario usuario = usuarioRepository.findByEmail(emailNormalizado)
-                .orElseThrow(() -> new BadCredentialsException("E-mail ou senha inválidos"));
+                .orElseThrow(() -> new BadCredentialsException(MENSAGEM_CREDENCIAIS_INVALIDAS));
 
         if (!Boolean.TRUE.equals(usuario.getAtivo())) {
             throw new BadCredentialsException("Usuário inativo");
         }
 
         garantirAdminConfigurado(usuario);
+        validarBloqueioLogin(usuario);
 
         if (!passwordEncoder.matches(senha, usuario.getSenha())) {
-            throw new BadCredentialsException("E-mail ou senha inválidos");
+            registrarFalhaLogin(usuario);
+            throw new BadCredentialsException(MENSAGEM_CREDENCIAIS_INVALIDAS);
         }
 
-        return usuario;
+        return registrarLoginComSucesso(usuario);
     }
 
     @Transactional(readOnly = true)
@@ -160,7 +170,10 @@ public class UsuarioService {
         }
 
         if (request.getSenha() != null && !request.getSenha().isBlank()) {
+            validarSenhaForte(request.getSenha());
             usuario.setSenha(passwordEncoder.encode(request.getSenha()));
+            usuario.setTentativasLoginFalhas(0);
+            usuario.setBloqueadoAte(null);
         }
 
         if (request.getAtivo() != null) {
@@ -171,7 +184,10 @@ public class UsuarioService {
     }
 
     public void alterarSenha(Usuario usuario, String novaSenha) {
+        validarSenhaForte(novaSenha);
         usuario.setSenha(passwordEncoder.encode(novaSenha));
+        usuario.setTentativasLoginFalhas(0);
+        usuario.setBloqueadoAte(null);
         usuarioRepository.save(usuario);
     }
 
@@ -184,6 +200,8 @@ public class UsuarioService {
     public Usuario ativar(Long id) {
         Usuario usuario = buscarPorId(id);
         usuario.setAtivo(true);
+        usuario.setTentativasLoginFalhas(0);
+        usuario.setBloqueadoAte(null);
         return usuarioRepository.save(usuario);
     }
 
@@ -224,6 +242,49 @@ public class UsuarioService {
         if (adminAutenticado != null && id.equals(adminAutenticado.getId())) {
             throw new DomainException("Não é permitido alterar seu próprio acesso administrativo");
         }
+    }
+
+    private void validarSenhaForte(String senha) {
+        if (senha == null || senha.length() < 8 || senha.length() > 100) {
+            throw new DomainException(MENSAGEM_SENHA_FRACA);
+        }
+
+        boolean possuiLetra = senha.chars().anyMatch(Character::isLetter);
+        boolean possuiNumero = senha.chars().anyMatch(Character::isDigit);
+
+        if (!possuiLetra || !possuiNumero) {
+            throw new DomainException(MENSAGEM_SENHA_FRACA);
+        }
+    }
+
+    private void validarBloqueioLogin(Usuario usuario) {
+        if (usuario.getBloqueadoAte() != null && usuario.getBloqueadoAte().isAfter(LocalDateTime.now())) {
+            throw new BadCredentialsException(MENSAGEM_LOGIN_BLOQUEADO);
+        }
+
+        if (usuario.getBloqueadoAte() != null) {
+            usuario.setBloqueadoAte(null);
+            usuario.setTentativasLoginFalhas(0);
+            usuarioRepository.save(usuario);
+        }
+    }
+
+    private void registrarFalhaLogin(Usuario usuario) {
+        int tentativas = Optional.ofNullable(usuario.getTentativasLoginFalhas()).orElse(0) + 1;
+        usuario.setTentativasLoginFalhas(tentativas);
+
+        if (tentativas >= MAX_TENTATIVAS_LOGIN) {
+            usuario.setBloqueadoAte(LocalDateTime.now().plusMinutes(MINUTOS_BLOQUEIO_LOGIN));
+        }
+
+        usuarioRepository.save(usuario);
+    }
+
+    private Usuario registrarLoginComSucesso(Usuario usuario) {
+        usuario.setTentativasLoginFalhas(0);
+        usuario.setBloqueadoAte(null);
+        usuario.setUltimoLoginEm(LocalDateTime.now());
+        return usuarioRepository.save(usuario);
     }
 }
 

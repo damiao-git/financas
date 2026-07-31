@@ -18,7 +18,7 @@ public class UsuarioUpdateRequest {
     @Size(max = 150, message = "E-mail deve ter no máximo 150 caracteres")
     private String email;
 
-    @Size(min = 6, max = 100, message = "Senha deve ter entre 6 e 100 caracteres")
+    @Size(min = 8, max = 100, message = "Senha deve ter entre 8 e 100 caracteres")
     private String senha;
 
     private Boolean ativo;
