@@ -46,7 +46,7 @@ public class AuthController {
         );
 
         String token = jwtService.gerarToken(usuario);
-        return ResponseEntity.ok(new LoginResponse(token));
+        return ResponseEntity.ok(new LoginResponse(token, usuario.getTrocarSenhaNoProximoLogin()));
     }
 
     @PostMapping("/google")
@@ -54,7 +54,7 @@ public class AuthController {
         GoogleAuthService.GoogleUserInfo googleUser = googleAuthService.validarToken(request.getIdToken());
         Usuario usuario = usuarioService.autenticarGoogle(googleUser.nome(), googleUser.email());
         String token = jwtService.gerarToken(usuario);
-        return ResponseEntity.ok(new LoginResponse(token));
+        return ResponseEntity.ok(new LoginResponse(token, usuario.getTrocarSenhaNoProximoLogin()));
     }
 
     @PostMapping("/esqueci-senha")

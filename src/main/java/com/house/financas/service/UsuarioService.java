@@ -66,6 +66,7 @@ public class UsuarioService {
         usuario.setAtivo(true);
         usuario.setRole(roleParaEmail(emailNormalizado));
         usuario.setTentativasLoginFalhas(0);
+        usuario.setTrocarSenhaNoProximoLogin(false);
 
         return usuarioRepository.save(usuario);
     }
@@ -84,6 +85,7 @@ public class UsuarioService {
                     if (usuario.getNome() == null || usuario.getNome().isBlank()) {
                         usuario.setNome(nome.trim());
                     }
+                    usuario.setTrocarSenhaNoProximoLogin(false);
                     garantirAdminConfigurado(usuario);
                     return usuarioRepository.save(usuario);
                 })
@@ -95,6 +97,7 @@ public class UsuarioService {
                     usuario.setAtivo(true);
                     usuario.setRole(roleParaEmail(emailNormalizado));
                     usuario.setOnboardingConcluido(false);
+                    usuario.setTrocarSenhaNoProximoLogin(false);
                     return usuarioRepository.save(usuario);
                 });
     }
@@ -174,6 +177,7 @@ public class UsuarioService {
             usuario.setSenha(passwordEncoder.encode(request.getSenha()));
             usuario.setTentativasLoginFalhas(0);
             usuario.setBloqueadoAte(null);
+            usuario.setTrocarSenhaNoProximoLogin(false);
         }
 
         if (request.getAtivo() != null) {
@@ -188,7 +192,36 @@ public class UsuarioService {
         usuario.setSenha(passwordEncoder.encode(novaSenha));
         usuario.setTentativasLoginFalhas(0);
         usuario.setBloqueadoAte(null);
+        usuario.setTrocarSenhaNoProximoLogin(false);
         usuarioRepository.save(usuario);
+    }
+
+    public Usuario definirSenhaTemporaria(Long id, String senhaTemporaria, Usuario adminAutenticado) {
+        validarNaoEhProprioUsuario(id, adminAutenticado);
+        validarSenhaForte(senhaTemporaria);
+
+        Usuario usuario = buscarPorId(id);
+        usuario.setSenha(passwordEncoder.encode(senhaTemporaria));
+        usuario.setTentativasLoginFalhas(0);
+        usuario.setBloqueadoAte(null);
+        usuario.setTrocarSenhaNoProximoLogin(true);
+        usuario.setAtivo(true);
+        return usuarioRepository.save(usuario);
+    }
+
+    public Usuario trocarSenhaObrigatoria(Usuario usuarioAutenticado, String novaSenha) {
+        Usuario usuario = buscarPorId(usuarioAutenticado.getId());
+
+        if (!Boolean.TRUE.equals(usuario.getTrocarSenhaNoProximoLogin())) {
+            throw new DomainException("Não há troca de senha pendente para este usuário");
+        }
+
+        validarSenhaForte(novaSenha);
+        usuario.setSenha(passwordEncoder.encode(novaSenha));
+        usuario.setTentativasLoginFalhas(0);
+        usuario.setBloqueadoAte(null);
+        usuario.setTrocarSenhaNoProximoLogin(false);
+        return usuarioRepository.save(usuario);
     }
 
     public void deletar(Long id) {

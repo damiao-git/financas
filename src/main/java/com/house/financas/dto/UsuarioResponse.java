@@ -11,6 +11,7 @@ public record UsuarioResponse(
         String email,
         RoleUsuario role,
         Boolean ativo,
+        Boolean trocarSenhaNoProximoLogin,
         LocalDateTime dataCriacao,
         LocalDateTime dataAtualizacao
 ) {
@@ -22,6 +23,7 @@ public record UsuarioResponse(
                 usuario.getEmail(),
                 usuario.getRole() == null ? RoleUsuario.USER : usuario.getRole(),
                 usuario.getAtivo(),
+                Boolean.TRUE.equals(usuario.getTrocarSenhaNoProximoLogin()),
                 usuario.getDataCriacao(),
                 usuario.getDataAtualizacao()
         );

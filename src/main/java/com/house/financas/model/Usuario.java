@@ -47,6 +47,8 @@ public class Usuario {
 
     private LocalDateTime ultimoLoginEm;
 
+    private Boolean trocarSenhaNoProximoLogin = false;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime dataCriacao;
 

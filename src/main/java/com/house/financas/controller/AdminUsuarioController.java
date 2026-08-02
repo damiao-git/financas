@@ -1,6 +1,7 @@
 package com.house.financas.controller;
 
 import com.house.financas.dto.AdminUsuarioRoleRequest;
+import com.house.financas.dto.AdminUsuarioSenhaTemporariaRequest;
 import com.house.financas.dto.UsuarioResponse;
 import com.house.financas.model.Usuario;
 import com.house.financas.service.UsuarioService;
@@ -60,6 +61,17 @@ public class AdminUsuarioController {
 
         return ResponseEntity.ok(UsuarioResponse.from(
                 usuarioService.alterarRole(id, request.getRole(), adminAutenticado)
+        ));
+    }
+
+    @PatchMapping("/{id}/senha-temporaria")
+    public ResponseEntity<UsuarioResponse> definirSenhaTemporaria(
+            @PathVariable Long id,
+            @RequestBody @Valid AdminUsuarioSenhaTemporariaRequest request,
+            @AuthenticationPrincipal Usuario adminAutenticado) {
+
+        return ResponseEntity.ok(UsuarioResponse.from(
+                usuarioService.definirSenhaTemporaria(id, request.getSenhaTemporaria(), adminAutenticado)
         ));
     }
 }
